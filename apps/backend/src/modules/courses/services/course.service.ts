@@ -86,7 +86,7 @@ export class CoursesService {
 
     const canDelete = await this.canUserDeleteCourse(userId, course);
     if (!canDelete) {
-      throw new ForbiddenException('You do not have permission to delete this course');
+      throw new NotFoundException('Course not found');
     }
 
     course.isDeleted = true;
@@ -98,7 +98,7 @@ export class CoursesService {
 
     const canEdit = await this.canUserEditCourse(userId, course);
     if (!canEdit) {
-      throw new ForbiddenException('You do not have permission to publish this course');
+      throw new NotFoundException('Course not found');
     }
 
     course.isPublished = true;

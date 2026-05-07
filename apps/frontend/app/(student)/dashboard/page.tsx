@@ -96,7 +96,25 @@ export default function StudentDashboard() {
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
-        {stats.map((stat) => (
+        {statsLoading ? (
+          <>
+            {[1, 2, 3].map((i) => (
+              <Card key={i}><CardContent className="p-4 lg:p-6"><Skeleton variant="card" className="h-20" /></CardContent></Card>
+            ))}
+          </>
+        ) : statsError ? (
+          <div className="col-span-3 flex flex-col items-center justify-center py-8 gap-4">
+            <div className="flex items-center gap-2 text-destructive">
+              <AlertCircle className="h-5 w-5" />
+              <span>{statsError}</span>
+            </div>
+            <Button variant="outline" size="sm" onClick={refetchStats}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Retry
+            </Button>
+          </div>
+        ) : (
+          statsData.map((stat) => (
           <Card key={stat.label} className="hover:shadow-md transition-shadow">
             <CardContent className="p-4 lg:p-6">
               <div className="flex items-center gap-3">

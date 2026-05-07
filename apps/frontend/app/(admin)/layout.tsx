@@ -22,11 +22,25 @@ import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 
+interface PageTitleContextType {
+  title: string;
+  setTitle: (title: string) => void;
+}
+
+const PageTitleContext = React.createContext<PageTitleContextType>({
+  title: "Dashboard",
+  setTitle: () => {},
+});
+
+export function usePageTitle() {
+  return React.useContext(PageTitleContext);
+}
+
 const adminNav = [
   {
     section: "Main",
     items: [
-      { name: "Dashboard", href: "/(admin)/analytics", icon: LayoutDashboard },
+      { name: "Dashboard", href: "/(admin)/dashboard", icon: LayoutDashboard },
       { name: "Analytics", href: "/(admin)/analytics", icon: BarChart3 },
       { name: "Users", href: "/(admin)/users", icon: Users },
       { name: "Courses", href: "/(admin)/courses", icon: BookOpen },

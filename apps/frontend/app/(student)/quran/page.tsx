@@ -81,11 +81,6 @@ export default function QuranReaderPage() {
     setIsPlaying(false);
   };
 
-  const handlePlayVerse = (audioUrl: string, verseId: string) => {
-    setPlayingVerseId(verseId);
-    setIsPlaying(true);
-  };
-
   const handleBookClass = (verse: QuranVerse) => {
     setSelectedVerse(verse);
     setSelectedTeacher({
@@ -101,7 +96,7 @@ export default function QuranReaderPage() {
     setBookingModalOpen(false);
   };
 
-  const selectedSurahData = MOCK_SURAHS.find((s) => s.number === selectedSurah);
+  const selectedSurahData = surahs.find((s) => s.number === selectedSurah);
 
   return (
     <div className={cn("min-h-screen transition-colors duration-300", darkMode ? "bg-slate-900" : "bg-slate-50")}>
@@ -140,7 +135,7 @@ export default function QuranReaderPage() {
               </button>
             </div>
             <div className="overflow-y-auto h-[calc(100%-64px)]">
-              <SurahList surahs={MOCK_SURAHS} selectedSurah={selectedSurah} onSelectSurah={handleSelectSurah} isLoading={false} />
+              <SurahList surahs={surahs} selectedSurah={selectedSurah} onSelectSurah={handleSelectSurah} isLoading={isLoadingSurahs} />
             </div>
           </div>
         </div>
@@ -152,7 +147,7 @@ export default function QuranReaderPage() {
           <div className="p-4 border-b">
             <h2 className="font-semibold text-lg">Surah List</h2>
           </div>
-          <SurahList surahs={MOCK_SURAHS} selectedSurah={selectedSurah} onSelectSurah={handleSelectSurah} isLoading={false} />
+          <SurahList surahs={surahs} selectedSurah={selectedSurah} onSelectSurah={handleSelectSurah} isLoading={isLoadingSurahs} />
         </aside>
 
         {/* Main content */}

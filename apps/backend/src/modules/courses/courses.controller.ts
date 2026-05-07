@@ -99,7 +99,7 @@ export class CoursesController {
   @Patch('lessons/:id/order')
   @UseGuards(JwtAuthGuard)
   async reorderLesson(@Param('id') id: string, @Body() dto: LessonOrderDto, @Request() req: RequestWithUser) {
-    return this.lessonsService.reorderLesson(id, dto.order);
+    return this.lessonsService.reorderLesson(id, req.user.id, dto.order);
   }
 
   @Delete('lessons/:id')

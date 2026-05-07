@@ -27,8 +27,8 @@ export class AuthService {
     private readonly redisService: RedisService,
   ) {}
 
-  async generateMagicLink(email: string): Promise<void> {
-    const user = await this.userRepository.findOne({ where: { email } });
+  async generateMagicLink(email: string, organizationId: string): Promise<void> {
+    const user = await this.userRepository.findOne({ where: { email, organizationId } });
 
     if (!user) {
       throw new NotFoundException('User not found');

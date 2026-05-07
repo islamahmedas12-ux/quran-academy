@@ -60,15 +60,25 @@ export default function BookClassPage() {
   };
 
   const handleConfirm = async () => {
+    if (!selectedTeacher || !selectedDate || !selectedTime) return;
     setIsBooking(true);
-    await new Promise((r) => setTimeout(r, 1500));
-    setIsBooking(false);
-    setStep("success");
+    try {
+      const startTime = new Date(`${selectedDate}T${selectedTime}:00`).toISOString();
+      await api.post("/classes/book", {
+        teacherId: selectedTeacher.id,
+        startTime,
+        topic: notes,
+      });
+      setStep("success");
+    } catch (error) {
+      console.error("Failed to book class:", error);
+    } finally {
+      setIsBooking(false);
+    }
   };
 
   const handleGoBack = () => {
     if (step === "time") {
-      setSelectedTeacher(null);
       setStep("teacher");
     } else if (step === "confirm") {
       setSelectedDate("");
