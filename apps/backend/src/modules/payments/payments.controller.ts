@@ -91,7 +91,7 @@ export class PaymentsController {
   @UseGuards(JwtAuthGuard)
   async getTeacherEarnings(@Param('id') id: string, @Request() req: RequestWithUser) {
     const user = req.user;
-    if (user.id !== id && user.role !== Role.ORG_ADMIN) {
+    if (user.id !== id && user.role !== Role.ORG_ADMIN && user.role !== 'super_admin') {
       return { error: 'Access denied' };
     }
     return this.payoutsService.getTeacherEarnings(id);
@@ -101,7 +101,7 @@ export class PaymentsController {
   @UseGuards(JwtAuthGuard)
   async getEarningsSummary(@Param('id') id: string, @Request() req: RequestWithUser) {
     const user = req.user;
-    if (user.id !== id && user.role !== Role.ORG_ADMIN) {
+    if (user.id !== id && user.role !== Role.ORG_ADMIN && user.role !== 'super_admin') {
       return { error: 'Access denied' };
     }
     return this.payoutsService.getEarningsSummary(id);
