@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { api } from "@/lib/api";
 
 interface UserData {
   id: string;
@@ -134,14 +135,35 @@ export default function AdminUsersPage() {
     }
   };
 
-  const handleSuspendUser = (userId: string) => {
-    setUsers((prev) =>
-      prev.map((u) =>
-        u.id === userId
-          ? { ...u, status: u.status === "active" ? "inactive" : "active" }
-          : u
-      )
-    );
+  const [editFormData, setEditFormData] = React.useState<{ role: string; status: string }>({ role: "", status: "" });
+
+  const handleEditUser = (user: UserData) => {
+    setSelectedUser(user);
+    setEditFormData({ role: user.role, status: user.status });
+    setEditDialogOpen(true);
+  };
+
+  const confirmEdit = async () => {
+    if (!selectedUser) return;
+    try {
+      await api.patch(`/users/${selectedUser.id}`, {
+        role: editFormData.role,
+        status: editFormData.status,
+      });
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === selectedUser.id ? { ...u, role: editFormData.role as UserData["role"], status: editFormData.status as UserData["status"] } : u
+        )
+      );
+    } catch {
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === selectedUser.id ? { ...u, role: editFormData.role as UserData["role"], status: editFormData.status as UserData["status"] } : u
+        )
+      );
+    }
+    setEditDialogOpen(false);
+    setSelectedUser(null);
   };
 
   return (

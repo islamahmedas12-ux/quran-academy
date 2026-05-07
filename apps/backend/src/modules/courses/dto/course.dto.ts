@@ -1,8 +1,9 @@
-import { IsString, IsOptional, IsEnum, IsArray, IsBoolean } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsArray, IsBoolean, MaxLength } from 'class-validator';
 import { CourseCategory, CourseDifficulty } from '../entities/course.entity';
 
 export class CreateCourseDto {
   @IsString()
+  @MaxLength(255)
   title: string;
 
   @IsOptional()

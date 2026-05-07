@@ -15,22 +15,20 @@ export class AvailabilitySlot {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Index()
   @Column({ name: 'teacher_id' })
   teacherId: string;
-
-  @ManyToOne(() => User)
-  @JoinColumn({ name: 'teacher_id' })
-  teacher: User;
 
   @Column({ name: 'day_of_week', type: 'int' })
   dayOfWeek: number;
 
-  @Column({ name: 'start_time' })
+  @Column({ name: 'start_time', type: 'varchar', length: 50 })
   startTime: string;
 
-  @Column({ name: 'end_time' })
+  @Column({ name: 'end_time', type: 'varchar', length: 50 })
   endTime: string;
+
+  @Column({ name: 'timezone', type: 'varchar', length: 100, default: 'UTC' })
+  timezone: string;
 
   @Column({ name: 'is_recurring', default: true })
   isRecurring: boolean;

@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsInt, IsBoolean, IsArray } from 'class-validator';
+import { IsString, IsOptional, IsInt, IsBoolean, IsArray, Min } from 'class-validator';
 
 export class CreateLessonDto {
   @IsString()
@@ -71,5 +71,6 @@ export class UpdateLessonDto {
 
 export class LessonOrderDto {
   @IsInt()
+  @Min(0)
   order: number;
 }

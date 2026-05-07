@@ -121,7 +121,7 @@ export class EnrollmentsService {
       progress.watchedDuration = dto.watchedDuration;
     }
 
-    if (dto.isCompleted) {
+    if (dto.isCompleted && !progress.isCompleted) {
       progress.isCompleted = true;
       progress.completedAt = new Date();
     }

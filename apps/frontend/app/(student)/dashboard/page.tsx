@@ -115,20 +115,21 @@ export default function StudentDashboard() {
           </div>
         ) : (
           statsData.map((stat) => (
-          <Card key={stat.label} className="hover:shadow-md transition-shadow">
-            <CardContent className="p-4 lg:p-6">
-              <div className="flex items-center gap-3">
-                <div className={cn("p-2 rounded-xl", stat.bg)}>
-                  <stat.icon className={cn("h-5 w-5", stat.color)} />
+            <Card key={stat.label} className="hover:shadow-md transition-shadow">
+              <CardContent className="p-4 lg:p-6">
+                <div className="flex items-center gap-3">
+                  <div className={cn("p-2 rounded-xl", stat.bg)}>
+                    <stat.icon className={cn("h-5 w-5", stat.color)} />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-slate-900">{stat.value}</p>
+                    <p className="text-xs text-slate-500">{stat.label}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-2xl font-bold text-slate-900">{stat.value}</p>
-                  <p className="text-xs text-slate-500">{stat.label}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">

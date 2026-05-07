@@ -86,8 +86,6 @@ export function AudioPlayer({ audioUrl, currentVerseId, isPlaying, onPlayPause, 
     });
   }, [progressPercent]);
 
-  if (!audioUrl) return null;
-
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-2xl animate-slide-up">
       <audio ref={audioRef} onTimeUpdate={handleTimeUpdate} onEnded={onEnded} />

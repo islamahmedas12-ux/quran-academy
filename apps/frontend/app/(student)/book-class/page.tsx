@@ -127,7 +127,7 @@ export default function BookClassPage() {
             <div className="flex items-center gap-2 mt-4">
               {STEPS.map((s, i) => {
                 const isActive = s.id === step;
-                const isCompleted = STEPS.findIndex((sc) => sc.id === step) > i;
+                const isCompleted = completedSteps.has(s.id);
                 return (
                   <React.Fragment key={s.id}>
                     <div className={cn("flex items-center gap-2", isActive && "flex-1")}>

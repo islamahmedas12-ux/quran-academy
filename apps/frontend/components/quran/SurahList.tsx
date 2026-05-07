@@ -70,7 +70,7 @@ export function SurahList({ surahs, selectedSurah, onSelectSurah, isLoading }: S
                     : revelationColors[surah.revelationType]
                 )}
               >
-                {surah.revelationType === "Meccan" ? "M" : "M"}
+                {surah.revelationType}
               </Badge>
             </div>
             <p

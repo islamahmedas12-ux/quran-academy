@@ -21,6 +21,7 @@ export class OrganizationSubscriptionsService {
     private readonly tiersService: SubscriptionTiersService,
     private readonly organizationsService: OrganizationsService,
     private readonly configService: ConfigService,
+    private readonly redisService: RedisService,
   ) {}
 
   async getOrCreateSubscription(organizationId: string): Promise<OrganizationSubscription> {
