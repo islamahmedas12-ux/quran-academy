@@ -164,6 +164,17 @@ export default function StudentDashboard() {
                     </div>
                   ))}
                 </div>
+              ) : classesError ? (
+                <div className="flex flex-col items-center justify-center py-6 gap-3">
+                  <div className="flex items-center gap-2 text-destructive">
+                    <AlertCircle className="h-5 w-5" />
+                    <span>{classesError}</span>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={refetchClasses}>
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Retry
+                  </Button>
+                </div>
               ) : classes.length === 0 ? (
                 <EmptyState
                   icon={<Calendar className="h-8 w-8" />}
