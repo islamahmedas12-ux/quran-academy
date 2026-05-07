@@ -1,0 +1,233 @@
+name: Nightly Backup
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # Daily at 2:00 AM UTC
+  workflow_dispatch:
+    inputs:
+      backup_type:
+        description: 'Type of backup (full, postgres, minio)'
+        required: false
+        default: 'full'
+
+env:
+  BACKUP_DIR: /backups
+  RETENTION_DAYS: 7
+
+jobs:
+  #-------------------------------------------------------------------------------
+  # PostgreSQL Backup
+  #-------------------------------------------------------------------------------
+  backup-postgres:
+    name: Backup PostgreSQL
+    runs-on: ubuntu-latest
+    container: ubuntu:22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup environment
+        run: |
+          apt-get update && apt-get install -y postgresql-client gzip
+
+      - name: Backup PostgreSQL
+        env:
+          POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+        run: |
+          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+          DATE=$(date +%Y%m%d)
+
+          echo "Starting PostgreSQL backup at $TIMESTAMP"
+
+          export PGPASSWORD="$POSTGRES_PASSWORD"
+
+          pg_dump -h "$POSTGRES_HOST" \
+            -U "$POSTGRES_USER" \
+            -d "$POSTGRES_DB" \
+            -F c -b \
+            -f "postgres_backup_${DATE}_${TIMESTAMP}.dump"
+
+          gzip "postgres_backup_${DATE}_${TIMESTAMP}.dump"
+
+          echo "PostgreSQL backup created: postgres_backup_${DATE}_${TIMESTAMP}.dump.gz"
+
+      - name: Verify backup integrity
+        run: |
+          if pg_restore --schema-only "postgres_backup_$(date +%Y%m%d)_*.dump.gz" > /dev/null 2>&1; then
+            echo "Backup verification: PASSED"
+          else
+            echo "Backup verification: FAILED"
+            exit 1
+          fi
+
+      - name: Upload backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: postgres-backup-${{ github.run_id }}
+          path: postgres_backup_*.dump.gz
+          retention-days: ${{ env.RETENTION_DAYS }}
+
+      - name: Store metadata
+        run: |
+          echo "Backup completed at $(date)" >> backup_metadata.txt
+          echo "PostgreSQL version: $(psql --version)" >> backup_metadata.txt
+          echo "Backup size: $(du -h postgres_backup_*.dump.gz | cut -f1)" >> backup_metadata.txt
+
+      - name: Upload metadata artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backup-metadata-${{ github.run_id }}
+          path: backup_metadata.txt
+          retention-days: ${{ env.RETENTION_DAYS }}
+
+  #-------------------------------------------------------------------------------
+  # MinIO Backup
+  #-------------------------------------------------------------------------------
+  backup-minio:
+    name: Backup MinIO
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup MinIO Client
+        run: |
+          curl -fsSL https://dl.min.io/client/mc/release/linux-amd64/mc \
+            -o /usr/local/bin/mc
+          chmod +x /usr/local/bin/mc
+
+      - name: Configure MinIO Client
+        env:
+          MINIO_ENDPOINT: ${{ secrets.MINIO_ENDPOINT }}
+          MINIO_ACCESS_KEY: ${{ secrets.MINIO_ACCESS_KEY }}
+          MINIO_SECRET_KEY: ${{ secrets.MINIO_SECRET_KEY }}
+        run: |
+          mc alias set myminio "$MINIO_ENDPOINT" "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY"
+          mc ls myminio/
+
+      - name: Backup MinIO buckets
+        env:
+          MINIO_BUCKETS: "courses audio recordings"
+        run: |
+          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+          DATE=$(date +%Y%m%d)
+
+          echo "Starting MinIO backup at $TIMESTAMP"
+
+          for bucket in $MINIO_BUCKETS; do
+            echo "Backing up bucket: $bucket"
+            mc mirror "myminio/$bucket" "minio_backup_${bucket}/" || echo "Warning: Failed to backup $bucket"
+          done
+
+          tar -czf "minio_backup_${DATE}_${TIMESTAMP}.tar.gz" minio_backup_*/
+
+          echo "MinIO backup created: minio_backup_${DATE}_${TIMESTAMP}.tar.gz"
+          echo "Backup size: $(du -h minio_backup_${DATE}_${TIMESTAMP}.tar.gz | cut -f1)"
+
+      - name: Upload backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: minio-backup-${{ github.run_id }}
+          path: minio_backup_*.tar.gz
+          retention-days: ${{ env.RETENTION_DAYS }}
+
+  #-------------------------------------------------------------------------------
+  # Store Backup Metadata
+  #-------------------------------------------------------------------------------
+  store-metadata:
+    name: Store Backup Metadata
+    runs-on: ubuntu-latest
+    needs: [backup-postgres, backup-minio]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: List artifacts
+        run: |
+          echo "Artifacts downloaded:"
+          find artifacts -type f
+
+      - name: Create backup manifest
+        run: |
+          TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+          cat > backup_manifest.json << EOF
+          {
+            "timestamp": "$TIMESTAMP",
+            "run_id": "${{ github.run_id }}",
+            "workflow_url": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+            "artifacts": [
+              {
+                "name": "postgres-backup-${{ github.run_id }}",
+                "type": "postgres"
+              },
+              {
+                "name": "minio-backup-${{ github.run_id }}",
+                "type": "minio"
+              }
+            ],
+            "backup_retention_days": ${{ env.RETENTION_DAYS }}
+          }
+          EOF
+
+          cat backup_manifest.json
+
+      - name: Upload manifest artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backup-manifest-${{ github.run_id }}
+          path: backup_manifest.json
+          retention-days: 30
+
+      - name: Upload to S3 (optional)
+        if: secrets.AWS_S3_BUCKET != ''
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+        run: |
+          aws s3 sync artifacts/ s3://${{ secrets.AWS_S3_BUCKET }}/backups/${{ github.run_id }}/
+
+  #-------------------------------------------------------------------------------
+  # Cleanup old artifacts
+  #-------------------------------------------------------------------------------
+  cleanup:
+    name: Cleanup Old Artifacts
+    runs-on: ubuntu-latest
+    needs: store-metadata
+    steps:
+      - name: Cleanup old artifacts
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const artifacts = await github.rest.actions.listArtifactsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100
+            });
+
+            const oldArtifacts = artifacts.data.artifacts.filter(artifact => {
+              const created = new Date(artifact.created_at);
+              const now = new Date();
+              const diffDays = (now - created) / (1000 * 60 * 60 * 24);
+              return diffDays > 7;
+            });
+
+            for (const artifact of oldArtifacts) {
+              await github.rest.actions.deleteArtifact({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                artifact_id: artifact.id
+              });
+              console.log(`Deleted old artifact: ${artifact.name}`);
+            }

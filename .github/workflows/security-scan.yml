@@ -1,0 +1,226 @@
+name: Security Scan
+
+on:
+  push:
+    branches:
+      - dev
+      - main
+  pull_request:
+    branches:
+      - dev
+      - main
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly scan on Sunday at midnight
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  #-------------------------------------------------------------------------------
+  # Dependency Audit
+  #-------------------------------------------------------------------------------
+  dependency-audit:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run npm audit
+        id: audit
+        run: npm audit --audit-level=high --json > audit-results.json || true
+
+      - name: Upload audit results
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-audit-results
+          path: audit-results.json
+
+      - name: Publish audit results to GitHub
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: audit-results.json
+          category: 'npm-audit'
+
+  #-------------------------------------------------------------------------------
+  # Secret Scanning
+  #-------------------------------------------------------------------------------
+  secret-scanning:
+    name: Secret Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run GitLeaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: false
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: false
+          GITLEAKS_LOG_LEVEL: debug
+
+      - name: Run TruffleHog
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          # Remove verbose to reduce log size
+          # verbose: 'true'
+
+  #-------------------------------------------------------------------------------
+  # SAST (Static Application Security Testing)
+  #-------------------------------------------------------------------------------
+  sast-scan:
+    name: SAST Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+        with:
+          category: "/language:javascript"
+          queries: security-extended
+
+  #-------------------------------------------------------------------------------
+  # Dependency Review
+  #-------------------------------------------------------------------------------
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+          block-listed-packages: |
+            mongoose
+            lodash@<4.17.21
+            axios@<1.6.0
+
+  #-------------------------------------------------------------------------------
+  # Docker Image Scan
+  #-------------------------------------------------------------------------------
+  docker-scan:
+    name: Docker Image Scan
+    runs-on: ubuntu-latest
+    needs: [dependency-audit]
+    if: github.event_name == 'push'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./apps/backend
+          load: true
+          tags: quran-academy/backend:test
+
+      - name: Run Trivy scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'quran-academy/backend:test'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'HIGH,CRITICAL'
+
+      - name: Upload Trivy results
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+          category: 'trivy-scan'
+
+  #-------------------------------------------------------------------------------
+  # Generate Security Report
+  #-------------------------------------------------------------------------------
+  security-report:
+    name: Security Report
+    runs-on: ubuntu-latest
+    needs: [dependency-audit, secret-scanning, sast-scan]
+    if: always()
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download audit results
+        uses: actions/download-artifact@v4
+        with:
+          name: npm-audit-results
+          path: results
+          continue-on-error: true
+
+      - name: Generate report summary
+        run: |
+          echo "# Security Scan Report" > security-report.md
+          echo "" >> security-report.md
+          echo "**Date:** $(date)" >> security-report.md
+          echo "**Run ID:** ${{ github.run_id }}" >> security-report.md
+          echo "" >> security-report.md
+
+          if [ -f results/audit-results.json ]; then
+            VULNS=$(cat results/audit-results.json | jq '.metadata.vulnerabilities.total // 0')
+            echo "**NPM Audit Vulnerabilities:** $VULNS" >> security-report.md
+          fi
+
+          echo "" >> security-report.md
+          echo "## Actions Taken" >> security-report.md
+          echo "- Dependency audit: ${{ needs.dependency-audit.result }}" >> security-report.md
+          echo "- Secret scanning: ${{ needs.secret-scanning.result }}" >> security-report.md
+          echo "- SAST scan: ${{ needs.sast-scan.result }}" >> security-report.md
+
+          cat security-report.md
+
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-report
+          path: security-report.md
+          retention-days: 30
+
+      - name: Notify on critical findings
+        if: needs.dependency-audit.result == 'failure'
+        uses: slackapi/slack-github-action@v1.25.0
+        with:
+          payload: |
+            {
+              "text": "🔒 Security Scan Completed",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Security Scan Report*\n• Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\n• Status: *Completed with issues*"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK

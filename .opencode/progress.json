@@ -1,54 +1,31 @@
 {
-  "devops": {
-    "1.1": {
-      "task": "VPS Setup",
-      "status": "done",
-      "description": "Enhanced docker-compose.yml with healthchecks, restart policies, network configuration, and resource limits",
-      "files": ["docker/docker-compose.yml"]
-    },
-    "1.2": {
-      "task": "Environment Files",
-      "status": "done",
-      "description": "Created docker/.env.example with all required variables (PostgreSQL, Redis, MinIO, Jitsi, JWT, Stripe, Magic Link, App)",
-      "files": ["docker/.env.example"]
-    },
-    "1.3": {
-      "task": "Docker Override",
-      "status": "done",
-      "description": "Created docker-compose.override.yml for development with port mappings, volume mounts for hot-reload, and no restart policy",
-      "files": ["docker/docker-compose.override.yml"]
-    },
-    "1.4": {
-      "task": "Nginx Config",
-      "status": "done",
-      "description": "Created infra/nginx/default.conf with reverse proxies for backend, frontend, MinIO, Jitsi, Uptime Kuma, rate limiting zones, and SSL configuration",
-      "files": ["infra/nginx/default.conf"]
-    },
-    "1.5": {
-      "task": "Backup Script",
-      "status": "done",
-      "description": "Created infra/scripts/backup.sh with PostgreSQL backup (pg_dump), MinIO backup (mc mirror), S3 upload, retention policy (7 daily, 4 weekly, 12 monthly)",
-      "files": ["infra/scripts/backup.sh"]
-    },
-    "1.6": {
-      "task": "Monitoring Stack",
-      "status": "done",
-      "description": "Added Uptime Kuma service to docker-compose.yml with healthcheck, resource limits, and persistent volume",
-      "files": ["docker/docker-compose.yml"]
-    },
-    "1.7": {
-      "task": "CI/CD Workflow",
-      "status": "done",
-      "description": "Created .github/workflows/deploy.yml with test, build, deploy, and rollback jobs triggered on push to dev branch",
-      "files": [".github/workflows/deploy.yml"]
-    },
-    "1.8": {
-      "task": "Security",
-      "status": "done",
-      "description": "Created infra/scripts/security.sh with UFW firewall, fail2ban, Docker security, sysctl hardening, and SSH key-only login instructions",
-      "files": ["infra/scripts/security.sh"]
-    }
+  "phase_1_foundation": {
+    "status": "done",
+    "devops": ["docker-compose (PostgreSQL, Redis, MinIO, Jitsi, Uptime Kuma)", "nginx reverse proxy + rate limiting", "CI/CD GitHub Actions deploy", "security scripts (UFW, fail2ban, backup)", "NestJS multi-tenant backend", "Next.js 15 frontend with route groups"],
+    "backend_modules": ["auth (JWT + magic link)", "users", "organizations", "tenant middleware"]
   },
-  "branch": "feature/issue-1-devops-foundations",
-  "completed_at": "2026-05-07"
+  "phase_2_live_classes": {
+    "status": "done",
+    "modules": ["jitsi integration (JWT room)", "availability calendar", "class booking flow", "post-class notes/homework/feedback", "class recording (MinIO)", "iCal export"]
+  },
+  "phase_3_quran": {
+    "status": "done",
+    "modules": ["Al-Quran.cloud API integration", "surah list + verse endpoints", "Redis caching", "transliteration (arabic-respell)", "audio recitation (EveryAyah CDN)", "student reading progress"]
+  },
+  "phase_4_courses": {
+    "status": "done",
+    "modules": ["course entity + CRUD", "lesson management", "enrollment flow", "video upload to MinIO", "progress tracking", "certificate generation"]
+  },
+  "phase_5_payments": {
+    "status": "done",
+    "modules": ["subscription tiers", "Stripe integration", "organization subscription", "feature gating (PlanGuard)", "teacher payouts"]
+  },
+  "phase_6_frontend": {
+    "status": "done",
+    "pages": ["quran reader with audio", "class booking flow", "student dashboard", "teacher portal (schedule, availability, earnings)", "admin portal (users, courses, analytics)", "course catalog + player", "my-courses"]
+  },
+  "phase_7_launch": {
+    "status": "in_progress",
+    "remaining": ["security hardening script", "backup/restore scripts", "SSL setup script", "monitoring (Prometheus/Grafana)", "deployment guide docs"]
+  }
 }
