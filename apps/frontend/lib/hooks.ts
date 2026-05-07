@@ -115,49 +115,59 @@ export function useOrganization() {
 export function useUpcomingClasses() {
   const [classes, setClasses] = useState<ScheduledClass[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function fetchClasses() {
-      try {
-        const response = await api.get<ScheduledClass[]>("/classes/upcoming");
-        if (response.success && response.data) {
-          setClasses(response.data);
-        }
-      } catch {
-        // handle error
-      } finally {
-        setIsLoading(false);
+  const fetchClasses = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await api.get<ScheduledClass[]>("/classes/upcoming");
+      if (response.success && response.data) {
+        setClasses(response.data);
+      } else {
+        setError("Failed to load classes");
       }
+    } catch {
+      setError("Failed to load classes");
+    } finally {
+      setIsLoading(false);
     }
-
-    fetchClasses();
   }, []);
 
-  return { classes, isLoading };
+  useEffect(() => {
+    fetchClasses();
+  }, [fetchClasses]);
+
+  return { classes, isLoading, error, refetch: fetchClasses };
 }
 
 export function useEnrolledCourses() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function fetchCourses() {
-      try {
-        const response = await api.get<Course[]>("/courses/enrolled");
-        if (response.success && response.data) {
-          setCourses(response.data);
-        }
-      } catch {
-        // handle error
-      } finally {
-        setIsLoading(false);
+  const fetchCourses = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await api.get<Course[]>("/courses/enrolled");
+      if (response.success && response.data) {
+        setCourses(response.data);
+      } else {
+        setError("Failed to load courses");
       }
+    } catch {
+      setError("Failed to load courses");
+    } finally {
+      setIsLoading(false);
     }
-
-    fetchCourses();
   }, []);
 
-  return { courses, isLoading };
+  useEffect(() => {
+    fetchCourses();
+  }, [fetchCourses]);
+
+  return { courses, isLoading, error, refetch: fetchCourses };
 }
 
 export function useNotifications() {

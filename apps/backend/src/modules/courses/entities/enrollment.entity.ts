@@ -43,4 +43,7 @@ export class Enrollment {
 
   @OneToMany(() => LessonProgress, (lp) => lp.enrollment)
   lessonProgress: LessonProgress[];
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
 }

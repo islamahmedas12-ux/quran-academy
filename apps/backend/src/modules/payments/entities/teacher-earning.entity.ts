@@ -20,6 +20,7 @@ export class TeacherEarning {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Index()
   @Column({ name: 'teacher_id' })
   teacherId: string;
 
@@ -54,4 +55,7 @@ export class TeacherEarning {
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
 }

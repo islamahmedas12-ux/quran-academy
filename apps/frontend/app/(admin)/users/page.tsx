@@ -270,19 +270,9 @@ export default function AdminUsersPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setEditDialogOpen(true);
-                          }}
+                          onClick={() => handleEditUser(user)}
                         >
                           <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleSuspendUser(user.id)}
-                        >
-                          <UserX className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
@@ -326,7 +316,8 @@ export default function AdminUsersPage() {
               <div>
                 <label className="text-sm font-medium mb-2 block">Role</label>
                 <select
-                  defaultValue={selectedUser.role}
+                  value={editFormData.role}
+                  onChange={(e) => setEditFormData((prev) => ({ ...prev, role: e.target.value }))}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                 >
                   <option value="student">Student</option>
@@ -337,7 +328,8 @@ export default function AdminUsersPage() {
               <div>
                 <label className="text-sm font-medium mb-2 block">Status</label>
                 <select
-                  defaultValue={selectedUser.status}
+                  value={editFormData.status}
+                  onChange={(e) => setEditFormData((prev) => ({ ...prev, status: e.target.value }))}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                 >
                   <option value="active">Active</option>
@@ -351,7 +343,7 @@ export default function AdminUsersPage() {
             <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={() => setEditDialogOpen(false)}>Save Changes</Button>
+            <Button onClick={confirmEdit}>Save Changes</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

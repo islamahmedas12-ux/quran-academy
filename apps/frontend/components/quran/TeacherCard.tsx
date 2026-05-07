@@ -40,7 +40,7 @@ export function TeacherCard({ teacher, onSelect, isSelected }: TeacherCardProps)
       <CardContent className="relative p-6">
         <div className="flex items-start gap-4">
           <div className="relative">
-            <Avatar name={teacher.name} src={teacher.avatar} size="lg" />
+            <Avatar alt={teacher.name} src={teacher.avatar} size="lg" />
             {isSelected && (
               <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
                 <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">

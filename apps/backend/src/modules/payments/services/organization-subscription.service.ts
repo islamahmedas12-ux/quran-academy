@@ -54,6 +54,10 @@ export class OrganizationSubscriptionsService {
 
     const tier = await this.tiersService.findOne(tierType);
 
+    if (!tier.stripePriceIdMonthly) {
+      throw new NotFoundException(`Stripe price ID not configured for tier ${tierType}`);
+    }
+
     let customerId = org.stripeCustomerId;
     if (!customerId) {
       customerId = await this.stripeService.createCustomer(
@@ -69,7 +73,7 @@ export class OrganizationSubscriptionsService {
 
     const { url } = await this.stripeService.createCheckoutSession(
       customerId,
-      `price_${tierType}`,
+      tier.stripePriceIdMonthly,
       successUrl || `${defaultSuccessUrl}/billing?success=true`,
       cancelUrl || `${defaultCancelUrl}/billing?canceled=true`,
       { organizationId, tierType },
@@ -90,7 +94,11 @@ export class OrganizationSubscriptionsService {
 
     const tier = await this.tiersService.findOne(tierType);
 
-    await this.stripeService.updateSubscription(subscription.stripeSubscriptionId, `price_${tierType}`);
+    if (!tier.stripePriceIdMonthly) {
+      throw new NotFoundException(`Stripe price ID not configured for tier ${tierType}`);
+    }
+
+    await this.stripeService.updateSubscription(subscription.stripeSubscriptionId, tier.stripePriceIdMonthly);
 
     subscription.tierType = tierType;
     return this.subscriptionRepository.save(subscription);
@@ -123,6 +131,36 @@ export class OrganizationSubscriptionsService {
     );
 
     return { portalUrl };
+  }
+
+  async getSubscriptionWithOwnershipCheck(organizationId: string, userId: string, userRole: string): Promise<OrganizationSubscription> {
+    const subscription = await this.getOrCreateSubscription(organizationId);
+
+    if (userRole !== 'super_admin') {
+      const org = await this.organizationsService.findOne(organizationId);
+      if (!org) {
+        throw new NotFoundException('Organization not found');
+      }
+      if (org.ownerId !== userId) {
+        throw new ForbiddenException('You do not have access to this organization\'s subscription');
+      }
+    }
+
+    return subscription;
+  }
+
+  async cancelSubscriptionWithOwnershipCheck(organizationId: string, userId: string, userRole: string): Promise<void> {
+    if (userRole !== 'super_admin') {
+      const org = await this.organizationsService.findOne(organizationId);
+      if (!org) {
+        throw new NotFoundException('Organization not found');
+      }
+      if (org.ownerId !== userId) {
+        throw new ForbiddenException('You do not have access to this organization\'s subscription');
+      }
+    }
+
+    await this.cancelSubscription(organizationId);
   }
 
   async verifyAndHandleWebhook(payload: Buffer, signature: string): Promise<any> {
