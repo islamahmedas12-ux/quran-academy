@@ -164,6 +164,25 @@ export class OrganizationSubscriptionsService {
     await this.cancelSubscription(organizationId);
   }
 
+  async updateSubscriptionWithOwnershipCheck(
+    organizationId: string,
+    tierType: SubscriptionTierType,
+    userId: string,
+    userRole: string,
+  ): Promise<OrganizationSubscription> {
+    if (userRole !== 'super_admin') {
+      const org = await this.organizationsService.findOne(organizationId);
+      if (!org) {
+        throw new NotFoundException('Organization not found');
+      }
+      if (org.ownerId !== userId) {
+        throw new ForbiddenException('You do not have access to this organization\'s subscription');
+      }
+    }
+
+    return this.updateSubscription(organizationId, tierType);
+  }
+
   async verifyAndHandleWebhook(payload: Buffer, signature: string): Promise<any> {
     const event = await this.stripeService.constructWebhookEvent(payload, signature);
     return this.handleWebhook(event);
