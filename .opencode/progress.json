@@ -25,7 +25,7 @@
     "pages": ["quran reader with audio", "class booking flow", "student dashboard", "teacher portal (schedule, availability, earnings)", "admin portal (users, courses, analytics)", "course catalog + player", "my-courses"]
   },
   "phase_7_launch": {
-    "status": "in_progress",
-    "remaining": ["security hardening script", "backup/restore scripts", "SSL setup script", "monitoring (Prometheus/Grafana)", "deployment guide docs"]
+    "status": "done",
+    "completed": ["security hardening script (UFW, fail2ban, Docker, sysctl, SSH, Nginx headers)", "backup script (PostgreSQL, MinIO, rclone offsite, retention)", "restore script (PostgreSQL + MinIO restore)", "SSL setup script (certbot, Let's Encrypt, auto-renewal)", "monitoring (Prometheus scrape configs, alert rules)", "Grafana dashboard (request rate, latency, error rate, DB connections, Redis memory)", "nginx config updated with security headers", "deployment guide docs", "deploy.yml (test, audit, Slack notifications, rollback)", "nightly-backup.yml (daily backup at 2am, S3 upload)", "security-scan.yml (npm audit, secrets scan, CodeQL, Trivy)"]
   }
 }
