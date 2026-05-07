@@ -12,6 +12,7 @@ import { MagicLinkToken } from './entities/magic-link-token.entity';
 import { RedisService } from '../../shared/services/redis.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
+import { UsersModule } from '../users/users.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { RolesGuard } from './guards/roles.guard';
       }),
       inject: [ConfigService],
     }),
+    UsersModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, RefreshJwtStrategy, RedisService, JwtAuthGuard, RolesGuard],

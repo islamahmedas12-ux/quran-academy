@@ -1,3 +1,11 @@
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
+
 @Entity('availability_slots')
 export class AvailabilitySlot {
   @PrimaryGeneratedColumn('uuid')

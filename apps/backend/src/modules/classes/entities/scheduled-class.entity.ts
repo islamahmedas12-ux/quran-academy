@@ -1,3 +1,11 @@
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
+
 export enum ClassStatus {
   PENDING = 'pending',
   CONFIRMED = 'confirmed',
