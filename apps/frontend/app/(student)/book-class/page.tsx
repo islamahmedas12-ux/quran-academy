@@ -60,10 +60,13 @@ export default function BookClassPage() {
     setStep("time");
   };
 
-  const handleTimeSelect = (time: string) => {
+  const handleTimeSelect = async (time: string) => {
+    setIsSelectingTime(true);
     setSelectedTime(time);
+    await new Promise((r) => setTimeout(r, 300));
     setCompletedSteps((prev) => new Set([...prev, "time"]));
     setStep("confirm");
+    setIsSelectingTime(false);
   };
 
   const handleConfirm = async () => {
