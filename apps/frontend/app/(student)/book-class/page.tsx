@@ -39,6 +39,7 @@ export default function BookClassPage() {
   const [selectedTime, setSelectedTime] = React.useState("");
   const [notes, setNotes] = React.useState("");
   const [isBooking, setIsBooking] = React.useState(false);
+  const [isSelectingTime, setIsSelectingTime] = React.useState(false);
 
   const availableDates = Array.from({ length: 14 }, (_, i) => {
     const date = new Date();

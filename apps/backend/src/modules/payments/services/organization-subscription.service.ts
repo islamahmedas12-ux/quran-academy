@@ -168,25 +168,37 @@ export class OrganizationSubscriptionsService {
     return this.handleWebhook(event);
   }
 
-  async handleWebhook(event: any): Promise<void> {
+  private readonly WEBHOOK_IDEMPOTENCY_TTL = 86400;
+
+  async handleWebhook(event: Stripe.Event): Promise<void> {
+    const idempotencyKey = `webhook:${event.id}`;
+    const existing = await this.redisService.get('system', idempotencyKey);
+
+    if (existing) {
+      this.logger.warn(`Webhook event ${event.id} already processed, skipping`);
+      return;
+    }
+
+    await this.redisService.set('system', idempotencyKey, '1', this.WEBHOOK_IDEMPOTENCY_TTL);
+
     switch (event.type) {
       case 'checkout.session.completed': {
-        const session = event.data.object;
+        const session = event.data.object as Stripe.Checkout.Session;
         await this.activateSubscription(session);
         break;
       }
       case 'customer.subscription.updated': {
-        const subscription = event.data.object;
+        const subscription = event.data.object as Stripe.Subscription;
         await this.updateSubscriptionStatus(subscription);
         break;
       }
       case 'customer.subscription.deleted': {
-        const subscription = event.data.object;
+        const subscription = event.data.object as Stripe.Subscription;
         await this.deactivateSubscription(subscription);
         break;
       }
       case 'invoice.payment_failed': {
-        const invoice = event.data.object;
+        const invoice = event.data.object as Stripe.Invoice;
         await this.handlePaymentFailed(invoice);
         break;
       }

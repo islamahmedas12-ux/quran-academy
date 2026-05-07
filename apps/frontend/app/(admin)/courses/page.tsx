@@ -96,8 +96,11 @@ export default function AdminCoursesPage() {
   const [searchQuery, setSearchQuery] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState<string>("all");
   const [createDialogOpen, setCreateDialogOpen] = React.useState(false);
+  const [editDialogOpen, setEditDialogOpen] = React.useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [selectedCourse, setSelectedCourse] = React.useState<CourseData | null>(null);
+  const [createFormData, setCreateFormData] = React.useState({ title: "", instructor: "", difficulty: "beginner", status: "draft", description: "" });
+  const [editFormData, setEditFormData] = React.useState({ title: "", instructor: "", difficulty: "beginner" as const, status: "draft" as const, description: "" });
 
   const filteredCourses = courses.filter((course) => {
     const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
