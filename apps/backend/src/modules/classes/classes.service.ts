@@ -46,20 +46,50 @@ export class ClassesService {
       throw new BadRequestException('Cannot book a class in the past');
     }
 
-    const existingClass = await this.classRepository.findOne({
-      where: {
-        teacherId: dto.teacherId,
-        status: ClassStatus.CONFIRMED,
-        startTime: LessThanOrEqual(startTime),
-        endTime: MoreThanOrEqual(startTime),
-      },
-    });
-
-    if (existingClass) {
-      throw new BadRequestException('This time slot is already booked');
+    if (endTime < new Date()) {
+      throw new BadRequestException('Cannot book a class with end time in the past');
     }
 
-    const jitsiRoom = this.generateJitsiRoom();
+    const overlappingClasses = await this.classRepository
+      .createQueryBuilder('class')
+      .where('class.teacherId = :teacherId', { teacherId: dto.teacherId })
+      .andWhere('class.status IN (:...statuses)', { statuses: [ClassStatus.CONFIRMED, ClassStatus.PENDING] })
+      .andWhere(
+        '(class.startTime < :endTime AND class.endTime > :startTime)',
+        { startTime, endTime },
+      )
+      .getOne();
+
+    if (overlappingClasses) {
+      throw new BadRequestException('This time slot overlaps with an existing booking');
+    }
+
+    const availability = await this.getAvailability(dto.teacherId);
+    const dayOfWeek = startTime.getDay();
+    const classStartHours = startTime.getUTCHours();
+    const classStartMinutes = startTime.getUTCMinutes();
+    const classEndHours = endTime.getUTCHours();
+    const classEndMinutes = endTime.getUTCMinutes();
+
+    const isWithinAvailability = availability.some((slot) => {
+      if (slot.dayOfWeek !== dayOfWeek) return false;
+
+      const [slotStartHour, slotStartMin] = slot.startTime.split(':').map(Number);
+      const [slotEndHour, slotEndMin] = slot.endTime.split(':').map(Number);
+
+      const classStart = classStartHours * 60 + classStartMinutes;
+      const classEnd = classEndHours * 60 + classEndMinutes;
+      const slotStart = slotStartHour * 60 + slotStartMin;
+      const slotEnd = slotEndHour * 60 + slotEndMin;
+
+      return classStart >= slotStart && classEnd <= slotEnd;
+    });
+
+    if (!isWithinAvailability) {
+      throw new BadRequestException('Booking time is outside teacher availability');
+    }
+
+    const jitsiRoom = this.generateJitsiRoom(scheduledClass.organizationId, scheduledClass.id);
 
     const scheduledClass = this.classRepository.create({
       teacherId: dto.teacherId,
@@ -99,9 +129,9 @@ export class ClassesService {
     });
   }
 
-  async findOne(id: string, userId: string): Promise<ScheduledClass> {
+  async findOne(id: string, userId: string, organizationId: string): Promise<ScheduledClass> {
     const scheduledClass = await this.classRepository.findOne({
-      where: { id },
+      where: { id, organizationId },
       relations: ['teacherId', 'studentId'],
     });
 
@@ -116,8 +146,8 @@ export class ClassesService {
     return scheduledClass;
   }
 
-  async updateClass(id: string, userId: string, dto: UpdateClassDto): Promise<ScheduledClass> {
-    const scheduledClass = await this.findOne(id, userId);
+  async updateClass(id: string, userId: string, organizationId: string, dto: UpdateClassDto): Promise<ScheduledClass> {
+    const scheduledClass = await this.findOne(id, userId, organizationId);
 
     if (scheduledClass.teacherId !== userId) {
       throw new ForbiddenException('Only the teacher can update class details');
@@ -127,8 +157,8 @@ export class ClassesService {
     return this.classRepository.save(scheduledClass);
   }
 
-  async confirmClass(id: string, userId: string): Promise<ScheduledClass> {
-    const scheduledClass = await this.findOne(id, userId);
+  async confirmClass(id: string, userId: string, organizationId: string): Promise<ScheduledClass> {
+    const scheduledClass = await this.findOne(id, userId, organizationId);
 
     if (scheduledClass.teacherId !== userId) {
       throw new ForbiddenException('Only the teacher can confirm the class');
@@ -138,8 +168,8 @@ export class ClassesService {
     return this.classRepository.save(scheduledClass);
   }
 
-  async cancelClass(id: string, userId: string): Promise<ScheduledClass> {
-    const scheduledClass = await this.findOne(id, userId);
+  async cancelClass(id: string, userId: string, organizationId: string): Promise<ScheduledClass> {
+    const scheduledClass = await this.findOne(id, userId, organizationId);
 
     if (scheduledClass.teacherId !== userId && scheduledClass.studentId !== userId) {
       throw new ForbiddenException('You cannot cancel this class');
@@ -153,8 +183,8 @@ export class ClassesService {
     return this.classRepository.save(scheduledClass);
   }
 
-  async addNotes(id: string, userId: string, dto: AddNotesDto): Promise<ScheduledClass> {
-    const scheduledClass = await this.findOne(id, userId);
+  async addNotes(id: string, userId: string, organizationId: string, dto: AddNotesDto): Promise<ScheduledClass> {
+    const scheduledClass = await this.findOne(id, userId, organizationId);
 
     if (scheduledClass.teacherId !== userId) {
       throw new ForbiddenException('Only the teacher can add notes');
@@ -167,10 +197,11 @@ export class ClassesService {
   async addTeacherFeedback(
     id: string,
     userId: string,
+    organizationId: string,
     rating: number,
     dto: AddFeedbackDto,
   ): Promise<ScheduledClass> {
-    const scheduledClass = await this.findOne(id, userId);
+    const scheduledClass = await this.findOne(id, userId, organizationId);
 
     if (scheduledClass.teacherId !== userId) {
       throw new ForbiddenException('Only the teacher can add feedback');
@@ -187,10 +218,11 @@ export class ClassesService {
   async addStudentFeedback(
     id: string,
     userId: string,
+    organizationId: string,
     rating: number,
     dto: AddFeedbackDto,
   ): Promise<ScheduledClass> {
-    const scheduledClass = await this.findOne(id, userId);
+    const scheduledClass = await this.findOne(id, userId, organizationId);
 
     if (scheduledClass.studentId !== userId) {
       throw new ForbiddenException('Only the student can add feedback');
@@ -204,11 +236,15 @@ export class ClassesService {
     return this.classRepository.save(scheduledClass);
   }
 
-  async completeClass(id: string, userId: string): Promise<ScheduledClass> {
-    const scheduledClass = await this.findOne(id, userId);
+  async completeClass(id: string, userId: string, organizationId: string): Promise<ScheduledClass> {
+    const scheduledClass = await this.findOne(id, userId, organizationId);
 
     if (scheduledClass.teacherId !== userId) {
       throw new ForbiddenException('Only the teacher can mark class as completed');
+    }
+
+    if (scheduledClass.status !== ClassStatus.CONFIRMED) {
+      throw new BadRequestException('Only confirmed classes can be marked as completed');
     }
 
     scheduledClass.status = ClassStatus.COMPLETED;
@@ -276,10 +312,10 @@ export class ClassesService {
     await this.availabilityRepository.remove(slot);
   }
 
-  private generateJitsiRoom(): string {
+  private generateJitsiRoom(organizationId: string, classId: string): string {
     const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-    let result = 'quran-academy-';
-    for (let i = 0; i < 12; i++) {
+    let result = `quran-academy-${organizationId}-${classId}-`;
+    for (let i = 0; i < 8; i++) {
       result += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     return result;

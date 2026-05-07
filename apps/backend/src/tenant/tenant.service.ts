@@ -28,21 +28,33 @@ export class TenantService implements OnModuleInit {
     }
 
     this.currentSchema = organization.schemaName;
-    await this.dataSource.query(`SET search_path TO ${this.currentSchema}`);
+    await this.dataSource.query(`SET search_path TO $1`, [this.currentSchema]);
     this.logger.debug(`Switched to schema: ${this.currentSchema}`);
   }
 
   async createSchema(schemaName: string): Promise<void> {
-    await this.dataSource.query(`CREATE SCHEMA IF NOT EXISTS ${schemaName}`);
+    await this.dataSource.query(`CREATE SCHEMA IF NOT EXISTS $1`, [schemaName]);
     this.logger.log(`Created schema: ${schemaName}`);
   }
 
   async initializeSchema(schemaName: string): Promise<void> {
     await this.createSchema(schemaName);
-    await this.dataSource.query(`SET search_path TO ${schemaName}`);
+    await this.dataSource.query(`SET search_path TO $1`, [schemaName]);
   }
 
   getCurrentSchema(): string | null {
     return this.currentSchema;
+  }
+
+  async resolveOrganization(slug: string): Promise<Organization> {
+    const organization = await this.organizationRepository.findOne({
+      where: { slug },
+    });
+
+    if (!organization) {
+      throw new Error(`Organization with slug ${slug} not found`);
+    }
+
+    return organization;
   }
 }

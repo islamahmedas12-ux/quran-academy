@@ -1,8 +1,8 @@
-import { IsString, IsOptional, IsDateString, IsEnum, IsBoolean } from 'class-validator';
+import { IsString, IsOptional, IsDateString, IsEnum, IsBoolean, IsUUID, IsInt, Min, Max } from 'class-validator';
 import { ClassStatus } from '../entities/scheduled-class.entity';
 
 export class BookClassDto {
-  @IsString()
+  @IsUUID()
   teacherId: string;
 
   @IsDateString()
@@ -45,6 +45,11 @@ export class AddNotesDto {
 }
 
 export class AddFeedbackDto {
+  @IsInt()
+  @Min(1)
+  @Max(5)
+  rating: number;
+
   @IsOptional()
   @IsString()
   feedback?: string;

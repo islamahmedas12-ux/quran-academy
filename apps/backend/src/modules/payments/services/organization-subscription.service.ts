@@ -123,6 +123,11 @@ export class OrganizationSubscriptionsService {
     return { portalUrl };
   }
 
+  async verifyAndHandleWebhook(payload: Buffer, signature: string): Promise<any> {
+    const event = await this.stripeService.constructWebhookEvent(payload, signature);
+    return this.handleWebhook(event);
+  }
+
   async handleWebhook(event: any): Promise<void> {
     switch (event.type) {
       case 'checkout.session.completed': {

@@ -13,27 +13,32 @@ export class RedisService {
     this.client.on('connect', () => this.logger.log('Connected to Redis'));
   }
 
-  async get(key: string): Promise<string | null> {
-    return this.client.get(key);
+  private prefixKey(orgId: string, key: string): string {
+    return `${orgId}:${key}`;
   }
 
-  async set(key: string, value: string, ttlSeconds?: number): Promise<void> {
+  async get(orgId: string, key: string): Promise<string | null> {
+    return this.client.get(this.prefixKey(orgId, key));
+  }
+
+  async set(orgId: string, key: string, value: string, ttlSeconds?: number): Promise<void> {
+    const prefixedKey = this.prefixKey(orgId, key);
     if (ttlSeconds) {
-      await this.client.setex(key, ttlSeconds, value);
+      await this.client.setex(prefixedKey, ttlSeconds, value);
     } else {
-      await this.client.set(key, value);
+      await this.client.set(prefixedKey, value);
     }
   }
 
-  async del(key: string): Promise<void> {
-    await this.client.del(key);
+  async del(orgId: string, key: string): Promise<void> {
+    await this.client.del(this.prefixKey(orgId, key));
   }
 
-  async incr(key: string): Promise<number> {
-    return this.client.incr(key);
+  async incr(orgId: string, key: string): Promise<number> {
+    return this.client.incr(this.prefixKey(orgId, key));
   }
 
-  async expire(key: string, seconds: number): Promise<void> {
-    await this.client.expire(key, seconds);
+  async expire(orgId: string, key: string, seconds: number): Promise<void> {
+    await this.client.expire(this.prefixKey(orgId, key), seconds);
   }
 }

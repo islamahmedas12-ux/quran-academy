@@ -5,6 +5,7 @@ import {
   PutObjectCommand,
   GetObjectCommand,
   DeleteObjectCommand,
+  CreateBucketCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
@@ -12,7 +13,6 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 export class MinioService {
   private readonly logger = new Logger(MinioService.name);
   private readonly s3Client: S3Client;
-  private readonly bucket: string;
   private readonly endpoint: string;
 
   constructor(private readonly configService: ConfigService) {
@@ -25,43 +25,64 @@ export class MinioService {
       },
       forcePathStyle: true,
     });
-    this.bucket = this.configService.get<string>('MINIO_BUCKET', 'quran-academy');
     this.endpoint = this.configService.get<string>('MINIO_ENDPOINT', 'http://localhost:9000');
   }
 
+  private getBucketName(orgId: string): string {
+    return `${orgId}-quran-academy`;
+  }
+
   async getPresignedUploadUrl(
+    orgId: string,
     key: string,
     expiresIn: number = 3600,
   ): Promise<{ uploadUrl: string; bucket: string; key: string }> {
+    const bucket = this.getBucketName(orgId);
     const command = new PutObjectCommand({
-      Bucket: this.bucket,
+      Bucket: bucket,
       Key: key,
     });
     const uploadUrl = await getSignedUrl(this.s3Client, command, { expiresIn });
     return {
       uploadUrl,
-      bucket: this.bucket,
+      bucket,
       key,
     };
   }
 
-  async getPresignedDownloadUrl(key: string, expiresIn: number = 3600): Promise<string> {
+  async getPresignedDownloadUrl(orgId: string, key: string, expiresIn: number = 3600): Promise<string> {
+    const bucket = this.getBucketName(orgId);
     const command = new GetObjectCommand({
-      Bucket: this.bucket,
+      Bucket: bucket,
       Key: key,
     });
     return getSignedUrl(this.s3Client, command, { expiresIn });
   }
 
-  async deleteObject(key: string): Promise<void> {
+  async deleteObject(orgId: string, key: string): Promise<void> {
+    const bucket = this.getBucketName(orgId);
     const command = new DeleteObjectCommand({
-      Bucket: this.bucket,
+      Bucket: bucket,
       Key: key,
     });
     await this.s3Client.send(command);
   }
 
-  getPublicUrl(key: string): string {
-    return `${this.endpoint}/${this.bucket}/${key}`;
+  getPublicUrl(orgId: string, key: string): string {
+    const bucket = this.getBucketName(orgId);
+    return `${this.endpoint}/${bucket}/${key}`;
+  }
+
+  async ensureBucket(orgId: string): Promise<void> {
+    const bucket = this.getBucketName(orgId);
+    try {
+      const command = new CreateBucketCommand({ Bucket: bucket });
+      await this.s3Client.send(command);
+      this.logger.log(`Created bucket: ${bucket}`);
+    } catch (error: any) {
+      if (error.name !== 'BucketAlreadyExists' && error.name !== 'BucketAlreadyOwnedByYou') {
+        throw error;
+      }
+    }
   }
 }

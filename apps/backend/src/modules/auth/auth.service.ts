@@ -27,11 +27,15 @@ export class AuthService {
     private readonly redisService: RedisService,
   ) {}
 
-  async generateMagicLink(email: string): Promise<{ token: string; expiresAt: Date }> {
+  async generateMagicLink(email: string): Promise<void> {
     const user = await this.userRepository.findOne({ where: { email } });
 
     if (!user) {
       throw new NotFoundException('User not found');
+    }
+
+    if (!user.isActive) {
+      throw new BadRequestException('User account is inactive');
     }
 
     await this.magicLinkRepository.delete({ userId: user.id });
@@ -46,8 +50,6 @@ export class AuthService {
     });
 
     await this.magicLinkRepository.save(magicLink);
-
-    return { token, expiresAt };
   }
 
   async verifyMagicLink(token: string): Promise<{
@@ -70,6 +72,10 @@ export class AuthService {
 
     if (!user) {
       throw new NotFoundException('User not found');
+    }
+
+    if (!user.isActive) {
+      throw new BadRequestException('User account is inactive');
     }
 
     const accessToken = this.jwtService.sign(
@@ -127,6 +133,10 @@ export class AuthService {
   async logout(token: string): Promise<void> {
     try {
       const payload = this.jwtService.verify(token);
+      const ttl = payload.exp - Math.floor(Date.now() / 1000);
+      if (ttl > 0) {
+        await this.redisService.set(`blacklist:${token}`, '1', ttl);
+      }
       await this.redisService.del(`refresh:${payload.sub}`);
     } catch {
       throw new BadRequestException('Invalid token');

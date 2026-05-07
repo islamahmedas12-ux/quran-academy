@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsInt, Min, Max } from 'class-validator';
+import { IsString, IsOptional, IsInt, Min, Max, IsBoolean, IsDateString } from 'class-validator';
 
 export class CreateAvailabilitySlotDto {
   @IsInt()
@@ -6,14 +6,14 @@ export class CreateAvailabilitySlotDto {
   @Max(6)
   dayOfWeek: number;
 
-  @IsString()
+  @IsDateString()
   startTime: string;
 
-  @IsString()
+  @IsDateString()
   endTime: string;
 
   @IsOptional()
-  @IsString()
+  @IsDateString()
   specificDate?: string;
 
   @IsOptional()

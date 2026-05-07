@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +10,9 @@ import { Avatar } from "@/components/ui/avatar";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/loading";
 import { useAuth, useUpcomingClasses, useEnrolledCourses, useNotifications } from "@/lib/hooks";
-import { BookOpen, Calendar, Quran, Clock, Bell, ArrowRight, Play, Sparkles, Target, TrendingUp } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { api } from "@/lib/api";
+import { BookOpen, Calendar, Quran, Clock, Bell, ArrowRight, Play, Sparkles, Target, TrendingUp, AlertCircle, RefreshCw } from "lucide-react";
 import { format, parseISO } from "date-fns";
 
 export default function StudentDashboard() {

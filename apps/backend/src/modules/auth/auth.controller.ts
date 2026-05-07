@@ -1,8 +1,10 @@
 import { Controller, Post, Get, Query, Body, UseGuards, Request } from '@nestjs/common';
+import { IsEmail } from 'class-validator';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 class GenerateMagicLinkDto {
+  @IsEmail()
   email: string;
 }
 
@@ -12,14 +14,10 @@ export class AuthController {
 
   @Post('magic-link')
   async generateMagicLink(@Body() dto: GenerateMagicLinkDto) {
-    const result = await this.authService.generateMagicLink(dto.email);
+    await this.authService.generateMagicLink(dto.email);
     return {
       success: true,
-      message: 'Magic link generated',
-      data: {
-        token: result.token,
-        expiresAt: result.expiresAt,
-      },
+      message: 'Magic link sent to email',
     };
   }
 
