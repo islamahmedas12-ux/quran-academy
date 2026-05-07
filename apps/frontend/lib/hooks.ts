@@ -190,3 +190,6 @@ export function useNotifications() {
 
   return { notifications, isLoading, markAsRead };
 }
+
+export { useTeacherSchedule } from "./hooks/useTeacherSchedule";
+export { useToast } from "./hooks/useToast";

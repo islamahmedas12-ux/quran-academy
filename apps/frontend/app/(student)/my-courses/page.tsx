@@ -2,228 +2,209 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { BookOpen, Clock, CheckCircle, Play, Filter } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { api } from "@/lib/api";
 import type { Course } from "@/lib/types";
-import { BookOpen, Clock, Play, CheckCircle, BarChart3 } from "lucide-react";
 
-interface EnrolledCourse extends Course {
-  progress: number;
-  completedLessons: number;
-  totalLessons: number;
-}
+const MOCK_COURSES: Course[] = [
+  {
+    id: "course_1",
+    title: "Quran Memorization Basics",
+    description: "Learn to memorize short surahs with proper Tajweed. This course covers essential memorization techniques.",
+    thumbnail: null,
+    difficulty: "beginner",
+    language: "Arabic",
+    duration: 480,
+    totalLessons: 20,
+    instructor: "Sheikh Ibrahim",
+    enrollmentCount: 156,
+    rating: 4.8,
+  },
+  {
+    id: "course_2",
+    title: "Arabic Grammar Fundamentals",
+    description: "Understanding Arabic grammar rules for Quranic Arabic. Build a strong foundation.",
+    thumbnail: null,
+    difficulty: "intermediate",
+    language: "Arabic",
+    duration: 600,
+    totalLessons: 15,
+    instructor: "Sheikh Abdullah",
+    enrollmentCount: 89,
+    rating: 4.6,
+  },
+  {
+    id: "course_3",
+    title: "Tajweed Rules Mastery",
+    description: "Master the rules of Quran recitation including proper pronunciation and elongation.",
+    thumbnail: null,
+    difficulty: "advanced",
+    language: "Arabic",
+    duration: 720,
+    totalLessons: 12,
+    instructor: "Sheikh Muhammad",
+    enrollmentCount: 234,
+    rating: 4.95,
+  },
+  {
+    id: "course_4",
+    title: "Islamic Studies for Beginners",
+    description: "Comprehensive introduction to Islamic teachings, history, and practice.",
+    thumbnail: null,
+    difficulty: "beginner",
+    language: "English",
+    duration: 360,
+    totalLessons: 10,
+    instructor: "Ustadha Fatima",
+    enrollmentCount: 312,
+    rating: 4.7,
+  },
+];
 
-function formatDuration(minutes: number): string {
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  if (hours === 0) return `${mins}m`;
-  if (mins === 0) return `${hours}h`;
-  return `${hours}h ${mins}m`;
-}
+const ENROLLMENTS = [
+  { courseId: "course_1", progress: 65, completedLessons: 13 },
+  { courseId: "course_2", progress: 30, completedLessons: 5 },
+  { courseId: "course_3", progress: 0, completedLessons: 0 },
+];
+
+type FilterType = "all" | "in_progress" | "completed";
 
 export default function MyCoursesPage() {
-  const [courses, setCourses] = React.useState<EnrolledCourse[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [filter, setFilter] = React.useState<"all" | "in_progress" | "completed">("all");
+  const [filter, setFilter] = React.useState<FilterType>("all");
 
-  React.useEffect(() => {
-    async function fetchEnrolledCourses() {
-      try {
-        const response = await api.get<EnrolledCourse[]>("/courses/enrolled");
-        if (response.success && response.data) {
-          setCourses(response.data);
-        }
-      } catch {
-        // handle error
-      } finally {
-        setIsLoading(false);
-      }
-    }
+  const coursesWithProgress = MOCK_COURSES.map((course) => {
+    const enrollment = ENROLLMENTS.find((e) => e.courseId === course.id);
+    return {
+      ...course,
+      progress: enrollment?.progress || 0,
+      completedLessons: enrollment?.completedLessons || 0,
+    };
+  });
 
-    fetchEnrolledCourses();
-  }, []);
+  const filteredCourses = coursesWithProgress.filter((course) => {
+    if (filter === "in_progress") return course.progress > 0 && course.progress < 100;
+    if (filter === "completed") return course.progress === 100;
+    return true;
+  });
 
-  const filteredCourses = React.useMemo(() => {
-    switch (filter) {
-      case "in_progress":
-        return courses.filter((c) => c.progress > 0 && c.progress < 100);
-      case "completed":
-        return courses.filter((c) => c.progress === 100);
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+      case "beginner":
+        return "bg-emerald-100 text-emerald-800";
+      case "intermediate":
+        return "bg-amber-100 text-amber-800";
+      case "advanced":
+        return "bg-red-100 text-red-800";
       default:
-        return courses;
+        return "bg-slate-100 text-slate-800";
     }
-  }, [courses, filter]);
+  };
 
-  const inProgressCount = courses.filter(
-    (c) => c.progress > 0 && c.progress < 100
-  ).length;
-  const completedCount = courses.filter((c) => c.progress === 100).length;
+  return (
+    <div className="min-h-screen bg-slate-50">
+      {/* Header */}
+      <div className="bg-white border-b border-slate-200">
+        <div className="max-w-4xl mx-auto px-4 py-6">
+          <h1 className="text-2xl font-bold mb-2">My Courses</h1>
+          <p className="text-slate-500">Continue learning where you left off</p>
+        </div>
+      </div>
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <Skeleton className="h-12 w-64" />
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <Card key={i}>
-              <Skeleton className="h-40 w-full" />
-              <CardHeader>
-                <Skeleton className="h-6 w-3/4" />
-                <Skeleton className="h-4 w-1/2 mt-2" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-2 w-full mt-4" />
+      <main className="max-w-4xl mx-auto px-4 py-6">
+        {/* Filters */}
+        <div className="flex items-center gap-2 mb-6">
+          <Filter className="h-4 w-4 text-slate-400" />
+          <div className="flex gap-2">
+            {(["all", "in_progress", "completed"] as FilterType[]).map((f) => (
+              <Button
+                key={f}
+                variant={filter === f ? "default" : "outline"}
+                size="sm"
+                onClick={() => setFilter(f)}
+              >
+                {f === "all" && "All Courses"}
+                {f === "in_progress" && "In Progress"}
+                {f === "completed" && "Completed"}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {/* Course grid */}
+        <div className="grid gap-4 md:grid-cols-2">
+          {filteredCourses.map((course) => (
+            <Card key={course.id} className="overflow-hidden">
+              <div className="h-32 bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+                <BookOpen className="h-12 w-12 text-primary/40" />
+              </div>
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between mb-2">
+                  <Badge className={getDifficultyColor(course.difficulty)}>
+                    {course.difficulty}
+                  </Badge>
+                  {course.progress === 100 && (
+                    <Badge variant="success" className="gap-1">
+                      <CheckCircle className="h-3 w-3" />
+                      Completed
+                    </Badge>
+                  )}
+                </div>
+                <h3 className="font-semibold mb-1">{course.title}</h3>
+                <p className="text-sm text-slate-500 mb-3 line-clamp-2">
+                  {course.description}
+                </p>
+
+                <div className="space-y-3">
+                  <div>
+                    <div className="flex items-center justify-between text-sm mb-1">
+                      <span className="text-slate-500">Progress</span>
+                      <span className="font-medium">{course.progress}%</span>
+                    </div>
+                    <Progress value={course.progress} className="h-2" />
+                  </div>
+
+                  <div className="flex items-center justify-between text-sm text-slate-500">
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-4 w-4" />
+                      {course.completedLessons}/{course.totalLessons} lessons
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <BookOpen className="h-4 w-4" />
+                      {course.instructor}
+                    </div>
+                  </div>
+
+                  <Link href={`/courses/${course.id}/lessons/${course.completedLessons + 1}`}>
+                    <Button
+                      className="w-full gap-2"
+                      variant={course.progress === 0 ? "default" : "outline"}
+                    >
+                      <Play className="h-4 w-4" />
+                      {course.progress === 0 ? "Start Course" : "Continue Learning"}
+                    </Button>
+                  </Link>
+                </div>
               </CardContent>
             </Card>
           ))}
         </div>
-      </div>
-    );
-  }
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">My Courses</h1>
-          <p className="text-muted-foreground mt-1">
-            Continue learning where you left off
-          </p>
-        </div>
-        <Link href="/courses">
-          <Button>
-            <BookOpen className="h-4 w-4 mr-2" />
-            Browse More Courses
-          </Button>
-        </Link>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold">{courses.length}</div>
-            <p className="text-sm text-muted-foreground">Total Enrolled</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold">{inProgressCount}</div>
-            <p className="text-sm text-muted-foreground">In Progress</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold">{completedCount}</div>
-            <p className="text-sm text-muted-foreground">Completed</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold">
-              {Math.round(
-                courses.reduce((acc, c) => acc + c.progress, 0) / courses.length || 0
-              )}%
-            </div>
-            <p className="text-sm text-muted-foreground">Avg. Progress</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filter Tabs */}
-      <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
-        <TabsList>
-          <TabsTrigger value="all">All ({courses.length})</TabsTrigger>
-          <TabsTrigger value="in_progress">
-            In Progress ({inProgressCount})
-          </TabsTrigger>
-          <TabsTrigger value="completed">
-            Completed ({completedCount})
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value={filter} className="mt-6">
-          {filteredCourses.length === 0 ? (
-            <div className="text-center py-12">
-              <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium">No courses found</h3>
-              <p className="text-muted-foreground mt-1">
-                {filter === "all"
-                  ? "You haven't enrolled in any courses yet"
-                  : filter === "in_progress"
-                  ? "You don't have any courses in progress"
-                  : "You haven't completed any courses yet"}
-              </p>
-              {filter !== "all" && (
-                <Button
-                  variant="outline"
-                  className="mt-4"
-                  onClick={() => setFilter("all")}
-                >
-                  View All Courses
-                </Button>
-              )}
-            </div>
-          ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredCourses.map((course) => (
-                <Card key={course.id} className="overflow-hidden">
-                  <div className="h-32 bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-                    <BookOpen className="h-12 w-12 text-primary/50" />
-                  </div>
-                  <CardHeader>
-                    <CardTitle className="line-clamp-1">{course.title}</CardTitle>
-                    <CardDescription className="line-clamp-2">
-                      {course.description}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">
-                        {course.completedLessons} of {course.totalLessons} lessons
-                      </span>
-                      <span className="font-medium">{course.progress}%</span>
-                    </div>
-                    <Progress value={course.progress} />
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Clock className="h-4 w-4" />
-                      {formatDuration(course.duration)}
-                    </div>
-                  </CardContent>
-                  <CardFooter className="border-t pt-4">
-                    <div className="flex items-center justify-between w-full">
-                      {course.progress === 100 ? (
-                        <Badge variant="success" className="flex items-center gap-1">
-                          <CheckCircle className="h-3 w-3" />
-                          Completed
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline">
-                          <BarChart3 className="h-3 w-3 mr-1" />
-                          In Progress
-                        </Badge>
-                      )}
-                      <Link href={`/courses/${course.id}`}>
-                        <Button size="sm">
-                          <Play className="h-4 w-4 mr-2" />
-                          {course.progress > 0 ? "Continue" : "Start"}
-                        </Button>
-                      </Link>
-                    </div>
-                  </CardFooter>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+        {filteredCourses.length === 0 && (
+          <div className="text-center py-12">
+            <BookOpen className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+            <h3 className="font-semibold mb-2">No courses found</h3>
+            <p className="text-slate-500">
+              {filter === "all" && "You haven't enrolled in any courses yet."}
+              {filter === "in_progress" && "No courses in progress."}
+              {filter === "completed" && "No completed courses yet."}
+            </p>
+          </div>
+        )}
+      </main>
     </div>
   );
 }

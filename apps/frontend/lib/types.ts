@@ -45,6 +45,7 @@ export interface ScheduledClass {
   teacherId: string;
   teacherName: string;
   studentId: string;
+  studentName: string;
   startTime: string;
   endTime: string;
   status: ClassStatus;

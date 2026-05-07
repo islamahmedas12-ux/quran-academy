@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTeacherSchedule } from "@/lib/hooks";
-import type { ScheduledClass } from "@/lib/types";
 import { format, parseISO, isToday, isTomorrow, isPast } from "date-fns";
 import { Video, Clock, User, MapPin, FileText, ChevronLeft, ChevronRight } from "lucide-react";
 
