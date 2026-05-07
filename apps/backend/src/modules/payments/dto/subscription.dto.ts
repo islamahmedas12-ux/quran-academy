@@ -18,8 +18,9 @@ export class CreateSubscriptionDto {
 }
 
 export class UpdateSubscriptionDto {
+  @IsOptional()
   @IsEnum(SubscriptionTierType)
-  tierType: SubscriptionTierType;
+  tierType?: SubscriptionTierType;
 
   @IsOptional()
   @IsString()

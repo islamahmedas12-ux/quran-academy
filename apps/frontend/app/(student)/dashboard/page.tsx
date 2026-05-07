@@ -15,19 +15,58 @@ import { api } from "@/lib/api";
 import { BookOpen, Calendar, Quran, Clock, Bell, ArrowRight, Play, Sparkles, Target, TrendingUp, AlertCircle, RefreshCw } from "lucide-react";
 import { format, parseISO } from "date-fns";
 
+interface StudentStats {
+  classesCompleted: number;
+  hoursLearned: number;
+  currentStreak: number;
+  totalCourses: number;
+  totalTeachers: number;
+}
+
+function useStudentStats() {
+  const [stats, setStats] = React.useState<StudentStats | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+
+  const fetchStats = React.useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await api.get<StudentStats>("/students/stats");
+      if (response.success && response.data) {
+        setStats(response.data);
+      } else {
+        setError("Failed to load stats");
+      }
+    } catch {
+      setError("Failed to load stats");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
+
+  return { stats, isLoading, error, refetch: fetchStats };
+}
+
 export default function StudentDashboard() {
+  const router = useRouter();
   const { user } = useAuth();
-  const { classes, isLoading: classesLoading } = useUpcomingClasses();
-  const { courses, isLoading: coursesLoading } = useEnrolledCourses();
+  const { classes, isLoading: classesLoading, error: classesError, refetch: refetchClasses } = useUpcomingClasses();
+  const { courses, isLoading: coursesLoading, error: coursesError, refetch: refetchCourses } = useEnrolledCourses();
   const { notifications } = useNotifications();
+  const { stats, isLoading: statsLoading, error: statsError, refetch: refetchStats } = useStudentStats();
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
-  const stats = [
-    { label: "Classes Completed", value: "24", icon: BookOpen, color: "text-primary", bg: "bg-primary/10" },
-    { label: "Hours Learned", value: "48", icon: Clock, color: "text-accent", bg: "bg-accent/10" },
-    { label: "Current Streak", value: "7 days", icon: TrendingUp, color: "text-emerald-500", bg: "bg-emerald-50" },
-  ];
+  const statsData = stats ? [
+    { label: "Classes Completed", value: stats.classesCompleted.toString(), icon: BookOpen, color: "text-primary", bg: "bg-primary/10" },
+    { label: "Hours Learned", value: stats.hoursLearned.toString(), icon: Clock, color: "text-accent", bg: "bg-accent/10" },
+    { label: "Current Streak", value: `${stats.currentStreak} days`, icon: TrendingUp, color: "text-emerald-500", bg: "bg-emerald-50" },
+  ] : [];
 
   return (
     <div className="space-y-8">

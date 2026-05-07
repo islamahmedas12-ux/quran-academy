@@ -36,5 +36,6 @@ export class UpdateAvailabilitySlotDto {
   endTime?: string;
 
   @IsOptional()
+  @IsBoolean()
   isActive?: boolean;
 }

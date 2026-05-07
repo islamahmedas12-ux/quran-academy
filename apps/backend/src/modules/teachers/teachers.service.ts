@@ -53,9 +53,9 @@ export class TeachersService {
     return { data, total };
   }
 
-  async findById(id: string): Promise<User> {
+async findById(id: string, organizationId: string): Promise<User> {
     const teacher = await this.userRepository.findOne({
-      where: { id, role: UserRole.TEACHER, isActive: true },
+      where: { id, role: UserRole.TEACHER, isActive: true, organizationId },
     });
 
     if (!teacher) {
@@ -65,8 +65,8 @@ export class TeachersService {
     return teacher;
   }
 
-  async getAvailability(teacherId: string): Promise<{ teacherId: string; availability: AvailabilitySlot[] }> {
-    const teacher = await this.findById(teacherId);
+  async getAvailability(teacherId: string, organizationId: string): Promise<any> {
+    const teacher = await this.findById(teacherId, organizationId);
     const slots = await this.availabilityRepository.find({
       where: { teacherId: teacher.id, isActive: true },
       order: { dayOfWeek: 'ASC', startTime: 'ASC' },
@@ -77,13 +77,13 @@ export class TeachersService {
     };
   }
 
-  async getStats(teacherId: string): Promise<{
+  async getStats(teacherId: string, organizationId: string): Promise<{
     totalClasses: number;
     completedClasses: number;
     upcomingClasses: number;
     averageRating: number;
   }> {
-    await this.findById(teacherId);
+    await this.findById(teacherId, organizationId);
 
     const totalClasses = await this.classRepository.count({
       where: { teacherId },

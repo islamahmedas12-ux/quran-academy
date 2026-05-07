@@ -43,9 +43,7 @@ export default function TeacherSchedulePage() {
     new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
   );
 
-  const upcomingClasses = classes.filter(
-    (c) => !isPast(parseISO(c.startTime)) || true
-  );
+  const upcomingClasses = classes.filter((c) => !isPast(parseISO(c.startTime)));
 
   const classesByDate = React.useMemo(() => {
     const grouped: Record<string, ScheduledClass[]> = {};

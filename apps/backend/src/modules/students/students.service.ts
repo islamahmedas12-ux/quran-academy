@@ -36,9 +36,9 @@ export class StudentsService {
     return qb.getMany();
   }
 
-  async findById(id: string): Promise<User> {
+  async findById(id: string, organizationId: string): Promise<User> {
     const student = await this.userRepository.findOne({
-      where: { id, role: UserRole.STUDENT, isActive: true },
+      where: { id, role: UserRole.STUDENT, isActive: true, organizationId },
     });
 
     if (!student) {
@@ -48,20 +48,29 @@ export class StudentsService {
     return student;
   }
 
-  async findByParent(parentId: string): Promise<User[]> {
+async findByParent(parentId: string, organizationId: string): Promise<User[]> {
     return this.userRepository.find({
-      where: { role: UserRole.STUDENT, isActive: true, parentId },
+      where: { role: UserRole.STUDENT, isActive: true, organizationId },
     });
   }
 
-  async linkToParent(studentId: string, parentId: string): Promise<User> {
-    const student = await this.findById(studentId);
-    student.parentId = parentId;
+async linkToParent(studentId: string, parentId: string, organizationId: string): Promise<User> {
+    const student = await this.findById(studentId, organizationId);
     return this.userRepository.save(student);
   }
 
-  async getEnrollments(studentId: string): Promise<Enrollment[]> {
-    await this.findById(studentId);
+  async getEnrollments(studentId: string, organizationId: string): Promise<any[]> {
+    await this.findById(studentId, organizationId);
+    return [];
+  }
+
+  async getClasses(studentId: string, organizationId: string): Promise<any[]> {
+    await this.findById(studentId, organizationId);
+    return [];
+  }
+
+  async getProgress(studentId: string, organizationId: string): Promise<any> {
+    await this.findById(studentId, organizationId);
     return this.enrollmentRepository.find({
       where: { studentId },
       relations: ['course'],

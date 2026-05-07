@@ -17,6 +17,7 @@ import { CreateSubscriptionDto, UpdateSubscriptionDto } from './dto/subscription
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles, Role } from '../../shared/decorators';
+import type Stripe from 'stripe';
 
 interface RequestWithUser extends Request {
   user: { id: string; role: Role; [key: string]: any };
@@ -75,11 +76,10 @@ export class PaymentsController {
     return this.subscriptionsService.getCustomerPortal(id);
   }
 
-  @Post('webhooks/stripe')
+@Post('webhooks/stripe')
   async handleStripeWebhook(
     @Headers('stripe-signature') signature: string,
-    @Body() body: any,
-    @Request() req: any,
+    @Body() body: Stripe.Event,
   ) {
     const payload = Buffer.from(JSON.stringify(body));
     const event = await this.subscriptionsService.verifyAndHandleWebhook(payload, signature);

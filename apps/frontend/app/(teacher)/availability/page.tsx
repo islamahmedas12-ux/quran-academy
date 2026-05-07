@@ -81,10 +81,14 @@ export default function TeacherAvailabilityPage() {
 
   const handleSave = async () => {
     setIsSaving(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setIsSaving(false);
-    showToast("Availability saved successfully!", "success");
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      showToast("Availability saved successfully!", "success");
+    } catch {
+      showToast("Failed to save availability. Please try again.", "error");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const getSlotsByDay = (day: number) =>

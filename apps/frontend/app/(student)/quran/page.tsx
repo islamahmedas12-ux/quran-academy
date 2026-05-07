@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Menu, X, Settings, ChevronLeft, Moon, Sun, Maximize2 } from "lucide-react";
+import { Menu, X, Settings, Moon, Sun, AlertCircle, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { SurahList } from "@/components/quran/SurahList";
@@ -10,31 +10,6 @@ import { AudioPlayer } from "@/components/quran/AudioPlayer";
 import { ClassBookingModal } from "@/components/quran/ClassBookingModal";
 import { Card } from "@/components/ui/card";
 import type { Surah, QuranVerse, Teacher } from "@/lib/types";
-
-const MOCK_SURAHS: Surah[] = [
-  { number: 1, name: "Al-Fatiha", englishName: "Al-Fatiha", englishNameTranslation: "The Opening", numberOfAyahs: 7, revelationType: "Meccan" },
-  { number: 2, name: "Al-Baqara", englishName: "Al-Baqara", englishNameTranslation: "The Cow", numberOfAyahs: 286, revelationType: "Medinan" },
-  { number: 3, name: "Ali Imran", englishName: "Ali Imran", englishNameTranslation: "Family of Imran", numberOfAyahs: 200, revelationType: "Medinan" },
-  { number: 4, name: "An-Nisa", englishName: "An-Nisa", englishNameTranslation: "The Women", numberOfAyahs: 176, revelationType: "Medinan" },
-  { number: 5, name: "Al-Ma'ida", englishName: "Al-Ma'ida", englishNameTranslation: "The Table Spread", numberOfAyahs: 120, revelationType: "Medinan" },
-  { number: 6, name: "Al-An'am", englishName: "Al-An'am", englishNameTranslation: "The Cattle", numberOfAyahs: 165, revelationType: "Meccan" },
-  { number: 7, name: "Al-A'raf", englishName: "Al-A'raf", englishNameTranslation: "The Heights", numberOfAyahs: 206, revelationType: "Meccan" },
-  { number: 36, name: "Ya-Sin", englishName: "Ya-Sin", englishNameTranslation: "Ya Sin", numberOfAyahs: 83, revelationType: "Meccan" },
-  { number: 55, name: "Ar-Rahman", englishName: "Ar-Rahman", englishNameTranslation: "The Beneficent", numberOfAyahs: 78, revelationType: "Medinan" },
-  { number: 67, name: "Al-Mulk", englishName: "Al-Mulk", englishNameTranslation: "The Sovereignty", numberOfAyahs: 30, revelationType: "Meccan" },
-  { number: 112, name: "Al-Ikhlas", englishName: "Al-Ikhlas", englishNameTranslation: "The Sincerity", numberOfAyahs: 4, revelationType: "Meccan" },
-  { number: 114, name: "An-Nas", englishName: "An-Nas", englishNameTranslation: "Mankind", numberOfAyahs: 6, revelationType: "Meccan" },
-];
-
-const MOCK_VERSES: QuranVerse[] = [
-  { id: "1-1", surah: 1, verse: 1, text: "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ", transliteration: "Bismi Allāhi Ar-Raḥmāni Ar-Raḥīm", translation: "In the name of Allah, the Entirely Merciful, the Especially Merciful.", audioUrl: "/audio/1-1.mp3" },
-  { id: "1-2", surah: 1, verse: 2, text: "الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ", transliteration: "Al-Ḥamdu lillāhi Rabbil-ʿālamīn", translation: "[All] praise is [due] to Allah, Lord of the worlds -", audioUrl: "/audio/1-2.mp3" },
-  { id: "1-3", surah: 1, verse: 3, text: "الرَّحْمَٰنِ الرَّحِيمِ", transliteration: "Ar-Raḥmāni Ar-Raḥīm", translation: "The Entirely Merciful, the Especially Merciful,", audioUrl: "/audio/1-3.mp3" },
-  { id: "1-4", surah: 1, verse: 4, text: "مَالِكِ يَوْمِ الدِّينِ", transliteration: "Māliki yawmi Ad-dīn", translation: "Sovereign of the Day of Recompense.", audioUrl: "/audio/1-4.mp3" },
-  { id: "1-5", surah: 1, verse: 5, text: "إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ", transliteration: "Iyyāka naʿbudu wa iyyāka nastaʿīn", translation: "It is You we worship and You we ask for help.", audioUrl: "/audio/1-5.mp3" },
-  { id: "1-6", surah: 1, verse: 6, text: "اهْدِنَا الصِّرَاطَ الْمُسْتَقِيمَ", transliteration: "Ihdinā Aṣ-ṣirāṭa Al-Mustaqīm", translation: "Guide us to the straight path -", audioUrl: "/audio/1-6.mp3" },
-  { id: "1-7", surah: 1, verse: 7, text: "صِرَاطَ الَّذِينَ أَنْعَمْتَ عَلَيْهِمْ غَيْرِ الْمَغْضُوبِ عَلَيْهِمْ وَلَا الضَّالِّينَ", transliteration: "Ṣirāṭa Al-ladhīna anʿamta ʿalayhim ghayri Al-maghḍūbi ʿalayhim wa lā Aḍ-ḍāllīn", translation: "The path of those upon whom You have bestowed favor, not of those who have evoked [Your] anger or of those who are astray.", audioUrl: "/audio/1-7.mp3" },
-];
 
 const LANGUAGES = [
   { code: "en", label: "English" },
@@ -47,8 +22,11 @@ const LANGUAGES = [
 export default function QuranReaderPage() {
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const [selectedSurah, setSelectedSurah] = React.useState(1);
+  const [surahs, setSurahs] = React.useState<Surah[]>([]);
   const [verses, setVerses] = React.useState<QuranVerse[]>([]);
+  const [isLoadingSurahs, setIsLoadingSurahs] = React.useState(true);
   const [isLoadingVerses, setIsLoadingVerses] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
   const [fontSize, setFontSize] = React.useState(28);
   const [translationLang, setTranslationLang] = React.useState("en");
   const [playingVerseId, setPlayingVerseId] = React.useState<string | null>(null);
@@ -58,14 +36,43 @@ export default function QuranReaderPage() {
   const [selectedTeacher, setSelectedTeacher] = React.useState<Teacher | null>(null);
   const [darkMode, setDarkMode] = React.useState(false);
 
-  React.useEffect(() => {
-    setIsLoadingVerses(true);
-    const timer = setTimeout(() => {
-      setVerses(MOCK_VERSES.filter((v) => v.surah === selectedSurah));
+  const fetchSurahs = React.useCallback(async () => {
+    try {
+      setIsLoadingSurahs(true);
+      setError(null);
+      const res = await fetch("/quran/surahs");
+      if (!res.ok) throw new Error("Failed to fetch surahs");
+      const data = await res.json();
+      setSurahs(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load surahs");
+    } finally {
+      setIsLoadingSurahs(false);
+    }
+  }, []);
+
+  const fetchVerses = React.useCallback(async () => {
+    try {
+      setIsLoadingVerses(true);
+      setError(null);
+      const res = await fetch(`/quran/surah/${selectedSurah}?lang=${translationLang}`);
+      if (!res.ok) throw new Error("Failed to fetch verses");
+      const data = await res.json();
+      setVerses(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load verses");
+    } finally {
       setIsLoadingVerses(false);
-    }, 300);
-    return () => clearTimeout(timer);
+    }
   }, [selectedSurah, translationLang]);
+
+  React.useEffect(() => {
+    fetchSurahs();
+  }, [fetchSurahs]);
+
+  React.useEffect(() => {
+    fetchVerses();
+  }, [fetchVerses]);
 
   const handleSelectSurah = (number: number) => {
     setSelectedSurah(number);

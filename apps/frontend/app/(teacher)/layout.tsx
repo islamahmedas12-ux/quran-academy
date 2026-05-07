@@ -20,10 +20,10 @@ import {
 } from "lucide-react";
 
 const teacherNav = [
-  { href: "/teacher/schedule", label: "Schedule", icon: Calendar },
-  { href: "/teacher/availability", label: "Availability", icon: Clock },
-  { href: "/teacher/earnings", label: "Earnings", icon: DollarSign },
-  { href: "/teacher/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/schedule", label: "Schedule", icon: Calendar },
+  { href: "/availability", label: "Availability", icon: Clock },
+  { href: "/earnings", label: "Earnings", icon: DollarSign },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
 ];
 
 export default function TeacherLayout({ children }: { children: React.ReactNode }) {
@@ -97,7 +97,7 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 bg-white border-r border-slate-100">
         <div className="p-6 border-b">
-          <Link href="/teacher/schedule" className="flex items-center gap-3">
+          <Link href="/schedule" className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center shadow-md">
               <span className="text-white font-bold">QA</span>
             </div>

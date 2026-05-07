@@ -207,6 +207,10 @@ export class ClassesService {
       throw new ForbiddenException('Only the teacher can add feedback');
     }
 
+    if (rating < 1 || rating > 5) {
+      throw new BadRequestException('Rating must be between 1 and 5');
+    }
+
     scheduledClass.teacherRating = rating;
     if (dto.feedback) {
       scheduledClass.teacherFeedback = dto.feedback;

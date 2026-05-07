@@ -23,6 +23,12 @@ interface WeeklyEarning {
 
 export default function TeacherDashboardPage() {
   const [isLoading, setIsLoading] = React.useState(true);
+  const currencyFormatter = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "SAR",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  });
 
   React.useEffect(() => {
     setTimeout(() => setIsLoading(false), 500);
@@ -98,7 +104,7 @@ export default function TeacherDashboardPage() {
     },
     {
       label: "This Week's Earnings",
-      value: "SAR 680",
+      value: currencyFormatter.format(680),
       icon: DollarSign,
       color: "text-amber-600",
       bg: "bg-amber-100",
@@ -228,7 +234,7 @@ export default function TeacherDashboardPage() {
             <div className="mt-4 pt-4 border-t flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total this week</p>
-                <p className="text-xl font-bold">SAR 680</p>
+                <p className="text-xl font-bold">{currencyFormatter.format(680)}</p>
               </div>
               <Button variant="outline" size="sm">
                 View Details
