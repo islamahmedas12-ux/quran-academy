@@ -31,10 +31,11 @@ export class TeacherPayoutsService {
     return query.getMany();
   }
 
-  async calculateEarnings(teacherId: string, month: number, year: number): Promise<TeacherEarning> {
+  async calculateEarnings(teacherId: string, month: number, year: number, organizationId: string): Promise<TeacherEarning> {
     const transactions = await this.transactionRepository.find({
       where: {
         teacherId,
+        organizationId,
         type: TransactionType.CLASS_PAYMENT,
       },
     });
