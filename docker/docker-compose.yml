@@ -1,0 +1,210 @@
+services:
+  postgres:
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: quran_academy
+      POSTGRES_USER: quran_admin
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d
+      - ./postgres/backups:/backups
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U quran_admin -d quran_academy"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - quran_academy_network
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  redis:
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - quran_academy_network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+  minio:
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - quran_academy_network
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  jitsi-web:
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - PUBLIC_URL=${JITSI_PUBLIC_URL}
+      - JITSI_WEBRTC_TRANSPORT_UDP=5000
+    volumes:
+      - ./jitsi/config:/config
+      - ./jitsi/transcripts:/usr/share/jitsi-web/transcripts
+    depends_on:
+      jitsi-prosody:
+        condition: service_healthy
+      jitsi-jicofo:
+        condition: service_healthy
+      jitsi-jvb:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - quran_academy_network
+
+  jitsi-prosody:
+    environment:
+      - PUBLIC_URL=${JITSI_PUBLIC_URL}
+      - AUTH_TYPE=internal
+      - ENABLE_AUTH=1
+      - GLOBAL_MODULES=smacks
+      - GLOBAL_CONFIG=cross_domain_bosh=true
+    volumes:
+      - ./jitsi/config:/config
+    healthcheck:
+      test: ["CMD-SHELL", "curl", "-f", "http://localhost:5280/http-bind"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - quran_academy_network
+
+  jitsi-jicofo:
+    environment:
+      - PUBLIC_URL=${JITSI_PUBLIC_URL}
+      - AUTH_TYPE=internal
+      - ENABLE_AUTH=1
+    volumes:
+      - ./jitsi/config:/config
+    depends_on:
+      - jitsi-prosody
+    restart: unless-stopped
+    networks:
+      - quran_academy_network
+
+  jitsi-jvb:
+    ports:
+      - "5000:5000/udp"
+      - "444:444/tcp"
+    environment:
+      - PUBLIC_URL=${JITSI_PUBLIC_URL}
+      - JVB_AUTH_USER=jvb
+      - JVB_AUTH_PASSWORD=${JITSI_JVB_AUTH_PASSWORD}
+      - JVB_STUN_SERVERS=stun.l.google.com:19302
+    volumes:
+      - ./jitsi/config:/config
+    healthcheck:
+      test: ["CMD-SHELL", "netstat -lnp | grep -q 4444 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - quran_academy_network
+
+  minio-mc:
+    image: minio/mc:latest
+    container_name: quran_academy_minio_mc
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command: |
+      "mc alias set myminio http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD};
+       mc mb myminio/courses --ignore-existing;
+       mc mb myminio/audio --ignore-existing;
+       mc mb myminio/recordings --ignore-existing;
+       mc anonymous set public myminio/courses;
+       exit 0"
+    volumes:
+      - minio_data:/data
+    networks:
+      - quran_academy_network
+    restart: "no"
+
+  uptime-kuma:
+    image: louiszheng/uptime-kuma:latest
+    container_name: quran_academy_uptime_kuma
+    ports:
+      - "3001:3001"
+    volumes:
+      - uptime_kuma_data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/api/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - quran_academy_network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+networks:
+  quran_academy_network:
+    driver: bridge
+    name: quran_academy_network
+
+volumes:
+  postgres_data:
+    name: quran_academy_postgres_data
+  redis_data:
+    name: quran_academy_redis_data
+  minio_data:
+    name: quran_academy_minio_data
+  uptime_kuma_data:
+    name: quran_academy_uptime_kuma_data

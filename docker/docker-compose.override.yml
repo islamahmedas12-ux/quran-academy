@@ -1,0 +1,107 @@
+services:
+  postgres:
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: quran_academy_dev
+      POSTGRES_USER: quran_admin
+      POSTGRES_PASSWORD: dev_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d
+      - ../apps/backend:/app/backend
+    command: postgres -c shared_preload_libraries=pg_stat_statements -c max_connections=200
+    restart: "no"
+
+  redis:
+    command: redis-server --appendonly yes --loglevel debug
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+      - ../apps/backend:/app/backend
+    restart: "no"
+
+  minio:
+    command: server /data --console-address ":9001"
+    ports:
+      - "9100:9000"
+      - "9101:9001"
+    environment:
+      MINIO_ROOT_USER: minio_admin
+      MINIO_ROOT_PASSWORD: minio_dev_password
+    volumes:
+      - minio_data:/data
+      - ../apps/backend:/app/backend
+      - ../apps/frontend:/app/frontend
+    restart: "no"
+
+  jitsi-web:
+    ports:
+      - "8080:80"
+      - "8443:443"
+    environment:
+      - PUBLIC_URL=http://localhost:8080
+      - JITSI_WEBRTC_TRANSPORT_UDP=5000
+    volumes:
+      - ./jitsi/config:/config
+      - ./jitsi/transcripts:/usr/share/jitsi-web/transcripts
+      - ../apps/backend:/app/backend
+    restart: "no"
+
+  jitsi-prosody:
+    environment:
+      - PUBLIC_URL=http://localhost:8080
+      - AUTH_TYPE=internal
+      - ENABLE_AUTH=0
+    volumes:
+      - ./jitsi/config:/config
+    restart: "no"
+
+  jitsi-jicofo:
+    environment:
+      - PUBLIC_URL=http://localhost:8080
+      - ENABLE_AUTH=0
+    volumes:
+      - ./jitsi/config:/config
+    restart: "no"
+
+  jitsi-jvb:
+    ports:
+      - "5000:5000/udp"
+      - "4444:444/tcp"
+    environment:
+      - PUBLIC_URL=http://localhost:8080
+      - JVB_AUTH_USER=jvb
+      - JVB_AUTH_PASSWORD=dev_password
+      - JVB_STUN_SERVERS=stun.l.google.com:19302
+    volumes:
+      - ./jitsi/config:/config
+    restart: "no"
+
+  minio-mc:
+    image: minio/mc:latest
+    depends_on:
+      - minio
+    entrypoint: ["/bin/sh", "-c"]
+    command: |
+      "mc alias set myminio http://minio:9000 minio_admin minio_dev_password;
+       mc mb myminio/courses --ignore-existing;
+       mc mb myminio/audio --ignore-existing;
+       mc mb myminio/recordings --ignore-existing;
+       exit 0"
+    volumes:
+      - minio_data:/data
+    restart: "no"
+
+  uptime-kuma:
+    image: louiszheng/uptime-kuma:latest
+    ports:
+      - "3002:3001"
+    volumes:
+      - uptime_kuma_data:/app/data
+    restart: "no"
+
+networks:
+  default:
+    name: quran_academy_dev_network
