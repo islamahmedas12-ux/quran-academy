@@ -1,5 +1,6 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule } from '@nestjs/config';
 import { PaymentsController } from './payments.controller';
 import {
   SubscriptionTier,
@@ -17,6 +18,7 @@ import { AuthModule } from '../auth/auth.module';
 import { UsersModule } from '../users/users.module';
 import { OrganizationsModule } from '../organizations/organizations.module';
 import { PlanGuardService } from '../../shared/decorators/plan-guard.service';
+import { RedisService } from '../../shared/services/redis.service';
 
 @Module({
   imports: [
@@ -37,6 +39,7 @@ import { PlanGuardService } from '../../shared/decorators/plan-guard.service';
     OrganizationSubscriptionsService,
     TeacherPayoutsService,
     PlanGuardService,
+    RedisService,
   ],
   exports: [
     StripeService,

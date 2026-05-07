@@ -59,15 +59,15 @@ export class PaymentsController {
 
   @Get('organizations/:id/subscription')
   @UseGuards(JwtAuthGuard)
-  async getSubscription(@Param('id') id: string) {
-    return this.subscriptionsService.getOrCreateSubscription(id);
+  async getSubscription(@Param('id') id: string, @Request() req: RequestWithUser) {
+    return this.subscriptionsService.getSubscriptionWithOwnershipCheck(id, req.user.id, req.user.role);
   }
 
   @Delete('organizations/:id/subscription')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ORG_ADMIN)
-  async cancelSubscription(@Param('id') id: string) {
-    await this.subscriptionsService.cancelSubscription(id);
+  async cancelSubscription(@Param('id') id: string, @Request() req: RequestWithUser) {
+    await this.subscriptionsService.cancelSubscriptionWithOwnershipCheck(id, req.user.id, req.user.role);
     return { success: true };
   }
 
@@ -114,7 +114,8 @@ export class PaymentsController {
     @Param('id') id: string,
     @Param('month') month: number,
     @Param('year') year: number,
+    @Request() req: RequestWithUser,
   ) {
-    return this.payoutsService.markAsPaid(id, month, year);
+    return this.payoutsService.markAsPaid(id, month, year, req.user.id);
   }
 }

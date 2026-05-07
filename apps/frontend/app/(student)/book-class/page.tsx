@@ -10,6 +10,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { TeacherCard } from "@/components/quran/TeacherCard";
 import { Badge } from "@/components/ui/badge";
 import { EmptyStateCard } from "@/components/ui/empty-state";
+import { api } from "@/lib/api";
 import type { Teacher } from "@/lib/types";
 
 const MOCK_TEACHERS: Teacher[] = [
@@ -18,8 +19,6 @@ const MOCK_TEACHERS: Teacher[] = [
   { id: "teacher_3", userId: "user_3", name: "Ustadha Fatima", email: "fatima@quranacademy.com", avatar: null, bio: "Female Quran teacher specializing in teaching children and beginners. Patient and caring approach with interactive learning methods.", specialization: ["Children", "Beginners", "Tajweed"], availability: [], rating: 4.8, totalClasses: 312 },
   { id: "teacher_4", userId: "user_4", name: "Sheikh Muhammad", email: "muhammad@quranacademy.com", avatar: null, bio: "Expert in Quran recitation with beautiful voice. Teaches advanced Tajweed rules and prepares students for Quran competitions.", specialization: ["Advanced Tajweed", "Qira'at", "Competition Prep"], availability: [], rating: 4.95, totalClasses: 178 },
 ];
-
-type Step = "teacher" | "time" | "confirm" | "success";
 
 const STEPS = [
   { id: "teacher", label: "Teacher" },
