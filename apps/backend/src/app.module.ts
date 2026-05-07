@@ -6,6 +6,8 @@ import { LoggerMiddleware } from './shared/interceptors/logger.interceptor';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
+import { ClassesModule } from './modules/classes/classes.module';
+import { QuranModule } from './modules/quran/quran.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -35,13 +37,17 @@ import { HealthController } from './health.controller';
       }),
       inject: [ConfigService],
     }),
-    ThrottlerModule.forRoot([{
-      ttl: 60000,
-      limit: 100,
-    }]),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 100,
+      },
+    ]),
     AuthModule,
     UsersModule,
     OrganizationsModule,
+    ClassesModule,
+    QuranModule,
   ],
   controllers: [HealthController],
 })

@@ -7,8 +7,32 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
 import { useAuth, useUpcomingClasses, useEnrolledCourses, useNotifications } from "@/lib/hooks";
-import { BookOpen, Calendar, Quran, Clock, ChevronRight, Bell } from "lucide-react";
+import {
+  BookOpen,
+  Calendar,
+  Quran,
+  Clock,
+  ChevronRight,
+  Bell,
+  Play,
+  ArrowRight,
+  Video,
+} from "lucide-react";
 import { format, formatDistanceToNow, parseISO } from "date-fns";
+
+interface ContinueReading {
+  surah: number;
+  surahName: string;
+  verse: number;
+  progress: number;
+}
+
+const MOCK_CONTINUE_READING: ContinueReading = {
+  surah: 1,
+  surahName: "Al-Fatihah",
+  verse: 4,
+  progress: 57,
+};
 
 export default function StudentDashboard() {
   const { user } = useAuth();
@@ -17,6 +41,11 @@ export default function StudentDashboard() {
   const { notifications } = useNotifications();
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
+
+  const isWithinJoinWindow = (startTime: string) => {
+    const diff = new Date(startTime).getTime() - Date.now();
+    return diff > 0 && diff <= 15 * 60 * 1000;
+  };
 
   return (
     <div className="space-y-6">
@@ -30,7 +59,7 @@ export default function StudentDashboard() {
             Continue your Quran learning journey
           </p>
         </div>
-        <Link href="/(student)/book">
+        <Link href="/(student)/book-class">
           <Button>
             <Calendar className="h-4 w-4 mr-2" />
             Book a Class
@@ -41,6 +70,48 @@ export default function StudentDashboard() {
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Main content */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Continue Reading */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Continue Reading</CardTitle>
+                <CardDescription>Pick up where you left off</CardDescription>
+              </div>
+              <Link
+                href="/(student)/quran"
+                className="text-sm text-primary hover:underline flex items-center gap-1"
+              >
+                Open Quran
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </CardHeader>
+            <CardContent>
+              <Link href={`/(student)/quran?surah=${MOCK_CONTINUE_READING.surah}&verse=${MOCK_CONTINUE_READING.verse}`}>
+                <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-primary/5 to-accent/5 rounded-xl hover:from-primary/10 hover:to-accent/10 transition-colors">
+                  <div className="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center">
+                    <Quran className="h-7 w-7 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-slate-900">{MOCK_CONTINUE_READING.surahName}</p>
+                    <p className="text-sm text-slate-600">
+                      Verse {MOCK_CONTINUE_READING.verse}
+                    </p>
+                    <div className="mt-2 h-2 bg-white/80 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-primary rounded-full transition-all"
+                        style={{ width: `${MOCK_CONTINUE_READING.progress}%` }}
+                      />
+                    </div>
+                  </div>
+                  <Button size="sm">
+                    <Play className="h-4 w-4 mr-1" />
+                    Continue
+                  </Button>
+                </div>
+              </Link>
+            </CardContent>
+          </Card>
+
           {/* Upcoming Classes */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
@@ -69,7 +140,7 @@ export default function StudentDashboard() {
                 <div className="text-center py-8">
                   <Calendar className="h-12 w-12 text-slate-300 mx-auto mb-3" />
                   <p className="text-slate-600">No upcoming classes</p>
-                  <Link href="/(student)/book">
+                  <Link href="/(student)/book-class">
                     <Button variant="outline" size="sm" className="mt-3">
                       Book your first class
                     </Button>
@@ -91,11 +162,20 @@ export default function StudentDashboard() {
                         </p>
                       </div>
                       <Badge status="active">Scheduled</Badge>
-                      <Link href={`/(student)/classes/${cls.id}`}>
-                        <Button variant="outline" size="sm">
-                          Join
-                        </Button>
-                      </Link>
+                      {isWithinJoinWindow(cls.startTime) ? (
+                        <Link href={`/(student)/classes/${cls.id}`}>
+                          <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                            <Video className="h-4 w-4 mr-1" />
+                            Join Now
+                          </Button>
+                        </Link>
+                      ) : (
+                        <Link href={`/(student)/classes/${cls.id}`}>
+                          <Button variant="outline" size="sm">
+                            View
+                          </Button>
+                        </Link>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -180,7 +260,7 @@ export default function StudentDashboard() {
               <CardTitle>Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Link href="/(student)/book" className="block">
+              <Link href="/(student)/book-class" className="block">
                 <Button variant="outline" className="w-full justify-start">
                   <Calendar className="h-4 w-4 mr-2" />
                   Book a Class

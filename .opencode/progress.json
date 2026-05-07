@@ -49,6 +49,56 @@
       "files": ["infra/scripts/security.sh"]
     }
   },
-  "branch": "feature/issue-1-devops-foundations",
+  "live_classes": {
+    "2.1": {
+      "task": "Jitsi Integration",
+      "status": "done",
+      "description": "Created JitsiService with JWT token generation, room name generation (quran-class-{classId}-{timestamp}), and endpoint POST /classes/:id/room",
+      "files": ["apps/backend/src/modules/classes/services/jitsi.service.ts"]
+    },
+    "2.2": {
+      "task": "Teacher Availability Module",
+      "status": "done",
+      "description": "Created AvailabilitySlot entity with dayOfWeek, startTime, endTime, isRecurring, specificDate. Created GET/PATCH /teachers/:teacherId/availability endpoints",
+      "files": ["apps/backend/src/modules/classes/entities/availability-slot.entity.ts", "apps/backend/src/modules/classes/services/availability.service.ts"]
+    },
+    "2.3": {
+      "task": "Class Booking Flow",
+      "status": "done",
+      "description": "Created BookClassDto, POST /classes/book endpoint, validates teacher availability and creates ScheduledClass with jitsiRoom",
+      "files": ["apps/backend/src/modules/classes/services/classes.service.ts", "apps/backend/src/modules/classes/dtos/class.dtos.ts"]
+    },
+    "2.4": {
+      "task": "Class Session Controller",
+      "status": "done",
+      "description": "Implemented GET /classes/upcoming, GET /classes/:id, POST /classes/:id/join, POST /classes/:id/complete, POST /classes/:id/cancel (24h policy), GET /classes/history",
+      "files": ["apps/backend/src/modules/classes/classes.controller.ts"]
+    },
+    "2.5": {
+      "task": "Class Notes & Homework",
+      "status": "done",
+      "description": "Created POST /classes/:id/notes for teacher to add notes/homeworkUrl/homeworkDescription with email notification to student",
+      "files": ["apps/backend/src/modules/classes/services/classes.service.ts"]
+    },
+    "2.6": {
+      "task": "Class Recording",
+      "status": "done",
+      "description": "Added recordingToggle to ScheduledClass, MinioService for signed URLs, POST /classes/:id/recording returns signed playback URL",
+      "files": ["apps/backend/src/modules/classes/services/minio.service.ts", "apps/backend/src/modules/classes/entities/scheduled-class.entity.ts"]
+    },
+    "2.7": {
+      "task": "Feedback & Rating",
+      "status": "done",
+      "description": "Created POST /classes/:id/feedback with rating (1-5) and comment. Both teacher and student can rate. Status set to COMPLETED after both submit",
+      "files": ["apps/backend/src/modules/classes/services/classes.service.ts"]
+    },
+    "2.8": {
+      "task": "Calendar Integration",
+      "status": "done",
+      "description": "Created GET /classes/calendar.ics returning iCal format feed, and POST /webhooks/google-calendar stub for future Google Calendar webhook",
+      "files": ["apps/backend/src/modules/classes/classes.controller.ts"]
+    }
+  },
+  "branch": "feature/issue-4-live-classes",
   "completed_at": "2026-05-07"
 }

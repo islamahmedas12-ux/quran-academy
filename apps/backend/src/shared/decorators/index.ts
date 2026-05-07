@@ -1,5 +1,14 @@
-import { createParamDecorator, ExecutionContext, SetMetadata } from '@nestjs/common';
+import {
+  createParamDecorator,
+  ExecutionContext,
+  SetMetadata,
+} from '@nestjs/common';
 import { Role } from '../constants/enums';
+import {
+  registerDecorator,
+  ValidationOptions,
+  ValidationArguments,
+} from 'class-validator';
 
 export const IS_PUBLIC_KEY = 'isPublic';
 export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
@@ -24,7 +33,10 @@ export const CurrentUser = createParamDecorator(
 );
 
 export const Pagination = createParamDecorator(
-  (data: { defaultLimit?: number; maxLimit?: number }, ctx: ExecutionContext) => {
+  (
+    data: { defaultLimit?: number; maxLimit?: number },
+    ctx: ExecutionContext,
+  ) => {
     const request = ctx.switchToHttp().getRequest();
     const query = request.query;
     const page = Math.max(1, parseInt(query.page, 10) || 1);
@@ -35,3 +47,25 @@ export const Pagination = createParamDecorator(
     return { page, limit, offset: (page - 1) * limit };
   },
 );
+
+export function IsFutureDate(
+  validationOptions?: ValidationOptions,
+): PropertyDecorator {
+  return function (object: object, propertyName: string) {
+    registerDecorator({
+      name: 'isFutureDate',
+      target: object.constructor,
+      propertyName: propertyName,
+      options: validationOptions,
+      validator: {
+        validate(value: string) {
+          const date = new Date(value);
+          return date > new Date();
+        },
+        defaultMessage(args: ValidationArguments) {
+          return `${args.property} must be a future date`;
+        },
+      },
+    });
+  };
+}

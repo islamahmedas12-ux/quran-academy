@@ -15,6 +15,8 @@ export enum SubscriptionTier {
 }
 
 export enum ClassStatus {
+  PENDING = 'pending',
+  CONFIRMED = 'confirmed',
   SCHEDULED = 'scheduled',
   IN_PROGRESS = 'in_progress',
   COMPLETED = 'completed',
