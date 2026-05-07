@@ -64,8 +64,24 @@ const adminNav = [
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
+  const [pageTitle, setPageTitle] = React.useState("Dashboard");
+
+  const getPageTitle = React.useCallback(() => {
+    if (pathname.includes("/analytics")) return "Analytics";
+    if (pathname.includes("/users")) return "Users";
+    if (pathname.includes("/courses")) return "Courses";
+    if (pathname.includes("/earnings")) return "Earnings";
+    if (pathname.includes("/transactions")) return "Transactions";
+    if (pathname.includes("/settings")) return "Settings";
+    return "Dashboard";
+  }, [pathname]);
+
+  React.useEffect(() => {
+    setPageTitle(getPageTitle());
+  }, [getPageTitle]);
 
   return (
+    <PageTitleContext.Provider value={{ title: pageTitle, setTitle: setPageTitle }}>
     <div className="min-h-screen bg-slate-50/50">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
@@ -184,7 +200,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </button>
 
             <div className="hidden lg:block">
-              <h2 className="text-sm font-medium text-slate-500">Dashboard</h2>
+              <h2 className="text-sm font-medium text-slate-500">{pageTitle}</h2>
             </div>
 
             <div className="flex items-center gap-3">
@@ -200,6 +216,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {/* Page content */}
         <main className="p-4 lg:p-6">{children}</main>
       </div>
+    </PageTitleContext.Provider>
     </div>
   );
 }

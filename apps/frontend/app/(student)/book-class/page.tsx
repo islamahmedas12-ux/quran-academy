@@ -27,9 +27,13 @@ const STEPS = [
   { id: "confirm", label: "Confirm" },
 ];
 
+const STEP_ORDER = ["teacher", "time", "confirm"] as const;
+type Step = (typeof STEP_ORDER)[number];
+
 export default function BookClassPage() {
   const router = useRouter();
   const [step, setStep] = React.useState<Step>("teacher");
+  const [completedSteps, setCompletedSteps] = React.useState<Set<string>>(new Set());
   const [selectedTeacher, setSelectedTeacher] = React.useState<Teacher | null>(null);
   const [selectedDate, setSelectedDate] = React.useState("");
   const [selectedTime, setSelectedTime] = React.useState("");
@@ -51,11 +55,13 @@ export default function BookClassPage() {
 
   const handleTeacherSelect = (teacher: Teacher) => {
     setSelectedTeacher(teacher);
+    setCompletedSteps((prev) => new Set([...prev, "teacher"]));
     setStep("time");
   };
 
   const handleTimeSelect = (time: string) => {
     setSelectedTime(time);
+    setCompletedSteps((prev) => new Set([...prev, "time"]));
     setStep("confirm");
   };
 

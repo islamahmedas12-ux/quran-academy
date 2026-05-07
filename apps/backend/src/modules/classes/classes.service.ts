@@ -307,6 +307,10 @@ export class ClassesService {
       throw new NotFoundException('Availability slot not found');
     }
 
+    if (dto.specificDate && dto.isRecurring === true) {
+      throw new BadRequestException('isRecurring must be false when specificDate is set');
+    }
+
     Object.assign(slot, dto);
     return this.availabilityRepository.save(slot);
   }

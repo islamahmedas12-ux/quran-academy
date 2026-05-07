@@ -32,14 +32,29 @@ export class ScheduledClass {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Index()
   @Column({ name: 'teacher_id' })
   teacherId: string;
 
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'teacher_id' })
+  teacher: User;
+
+  @Index()
   @Column({ name: 'student_id' })
   studentId: string;
 
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'student_id' })
+  student: User;
+
+  @Index()
   @Column({ name: 'organization_id' })
   organizationId: string;
+
+  @ManyToOne(() => Organization)
+  @JoinColumn({ name: 'organization_id' })
+  organization: Organization;
 
   @Column({ name: 'start_time', type: 'timestamp' })
   startTime: Date;

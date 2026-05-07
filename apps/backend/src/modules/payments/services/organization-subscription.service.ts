@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { OrganizationSubscription, OrganizationSubscriptionStatus } from '../entities/organization-subscription.entity';
@@ -7,6 +7,7 @@ import { StripeService } from './stripe.service';
 import { SubscriptionTiersService } from './subscription-tiers.service';
 import { OrganizationsService } from '../../organizations/organizations.service';
 import { ConfigService } from '@nestjs/config';
+import { RedisService } from '../../shared/services/redis.service';
 
 @Injectable()
 export class OrganizationSubscriptionsService {

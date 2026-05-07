@@ -29,6 +29,16 @@ export class SubscriptionTiersService {
     return tier;
   }
 
+  async findById(id: string): Promise<SubscriptionTier> {
+    const tier = await this.tierRepository.findOne({
+      where: { id, isActive: true },
+    });
+    if (!tier) {
+      throw new NotFoundException(`Subscription tier with id ${id} not found`);
+    }
+    return tier;
+  }
+
   async seedDefaultTiers(): Promise<void> {
     const defaultTiers = [
       {

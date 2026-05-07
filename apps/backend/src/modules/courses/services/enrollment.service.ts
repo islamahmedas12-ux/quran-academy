@@ -37,6 +37,10 @@ export class EnrollmentsService {
       throw new NotFoundException('Course not found');
     }
 
+    if (!course.isPublished) {
+      throw new NotFoundException('Course not found');
+    }
+
     const existing = await this.enrollmentRepository.findOne({
       where: { studentId, courseId },
     });
@@ -94,6 +98,13 @@ export class EnrollmentsService {
 
   async updateProgress(enrollmentId: string, userId: string, dto: UpdateProgressDto): Promise<LessonProgress> {
     const enrollment = await this.findOne(enrollmentId, userId);
+
+    const lesson = await this.lessonProgressRepository.manager.getRepository('Lesson').findOne({
+      where: { id: dto.lessonId, courseId: enrollment.courseId },
+    });
+    if (!lesson) {
+      throw new NotFoundException('Lesson not found');
+    }
 
     let progress = await this.lessonProgressRepository.findOne({
       where: { enrollmentId, lessonId: dto.lessonId },

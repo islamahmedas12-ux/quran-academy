@@ -48,6 +48,12 @@ export class SubscriptionTier {
   @Column({ default: true })
   isActive: boolean;
 
+  @Column({ name: 'stripe_price_id_monthly', nullable: true })
+  stripePriceIdMonthly: string | null;
+
+  @Column({ name: 'stripe_price_id_yearly', nullable: true })
+  stripePriceIdYearly: string | null;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

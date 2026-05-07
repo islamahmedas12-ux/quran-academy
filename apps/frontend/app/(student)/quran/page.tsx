@@ -81,6 +81,11 @@ export default function QuranReaderPage() {
     setIsPlaying(false);
   };
 
+  const handlePlayVerse = (audioUrl: string, verseId: string) => {
+    setPlayingVerseId(verseId);
+    setIsPlaying(true);
+  };
+
   const handleBookClass = (verse: QuranVerse) => {
     setSelectedVerse(verse);
     setSelectedTeacher({
@@ -194,6 +199,17 @@ export default function QuranReaderPage() {
             <div className="mt-4 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
           </div>
 
+          {/* Error state */}
+          {error && (
+            <div className="mb-6 p-4 rounded-xl border border-red-200 bg-red-50 flex items-center gap-3">
+              <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
+              <p className="text-red-700 flex-1">{error}</p>
+              <Button variant="outline" size="sm" onClick={() => { fetchSurahs(); fetchVerses(); }} className="gap-2">
+                <RefreshCw className="h-4 w-4" /> Retry
+              </Button>
+            </div>
+          )}
+
           {/* Verses */}
           {isLoadingVerses ? (
             <div className="space-y-4">
@@ -219,10 +235,10 @@ export default function QuranReaderPage() {
       </div>
 
       {/* Audio player */}
-      {playingVerseId && (
+      {selectedSurah && (
         <AudioPlayer
-          audioUrl={verses.find((v) => v.id === playingVerseId)?.audioUrl || null}
-          currentVerseId={playingVerseId}
+          audioUrl={verses.find((v) => v.id === playingVerseId)?.audioUrl || verses[0]?.audioUrl || null}
+          currentVerseId={playingVerseId || verses[0]?.id || null}
           isPlaying={isPlaying}
           onPlayPause={() => setIsPlaying(!isPlaying)}
           onEnded={() => setIsPlaying(false)}

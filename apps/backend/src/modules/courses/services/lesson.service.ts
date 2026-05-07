@@ -104,8 +104,14 @@ export class LessonsService {
     await this.reorderLessons(lesson.courseId, lesson.order);
   }
 
-  async reorderLesson(id: string, newOrder: number): Promise<Lesson> {
+  async reorderLesson(id: string, userId: string, newOrder: number): Promise<Lesson> {
     const lesson = await this.findOne(id);
+
+    const hasPermission = await this.checkUserPermission(userId, lesson.courseId);
+    if (!hasPermission) {
+      throw new NotFoundException('Lesson not found');
+    }
+
     const oldOrder = lesson.order;
 
     if (oldOrder === newOrder) {
@@ -148,8 +154,14 @@ export class LessonsService {
     return this.minioService.getPresignedUploadUrl(key, 3600);
   }
 
-  async updateVideoUrl(lessonId: string, videoUrl: string): Promise<Lesson> {
+  async updateVideoUrl(lessonId: string, userId: string, videoUrl: string): Promise<Lesson> {
     const lesson = await this.findOne(lessonId);
+
+    const hasPermission = await this.checkUserPermission(userId, lesson.courseId);
+    if (!hasPermission) {
+      throw new NotFoundException('Lesson not found');
+    }
+
     lesson.videoUrl = videoUrl;
     return this.lessonRepository.save(lesson);
   }
