@@ -8,6 +8,10 @@ import { UsersModule } from './modules/users/users.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
 import { CoursesModule } from './modules/courses/courses.module';
 import { PaymentsModule } from './modules/payments/payments.module';
+import { ClassesModule } from './modules/classes/classes.module';
+import { QuranModule } from './modules/quran/quran.module';
+import { TeachersModule } from './modules/teachers/teachers.module';
+import { StudentsModule } from './modules/students/students.module';
 import { HealthController } from './health.controller';
 import { SubscriptionTier } from './modules/payments/entities/subscription-tier.entity';
 import { OrganizationSubscription } from './modules/payments/entities/organization-subscription.entity';
@@ -55,6 +59,10 @@ import { Certificate } from './modules/courses/entities/certificate.entity';
     OrganizationsModule,
     CoursesModule,
     PaymentsModule,
+    ClassesModule,
+    QuranModule,
+    TeachersModule,
+    StudentsModule,
   ],
   controllers: [HealthController],
 })
