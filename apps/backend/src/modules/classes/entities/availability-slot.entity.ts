@@ -15,8 +15,13 @@ export class AvailabilitySlot {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Index()
   @Column({ name: 'teacher_id' })
   teacherId: string;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'teacher_id' })
+  teacher: User;
 
   @Column({ name: 'day_of_week', type: 'int' })
   dayOfWeek: number;

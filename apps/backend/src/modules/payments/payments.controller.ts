@@ -52,8 +52,9 @@ export class PaymentsController {
   async updateSubscription(
     @Param('id') id: string,
     @Body() dto: UpdateSubscriptionDto,
+    @Request() req: RequestWithUser,
   ) {
-    return this.subscriptionsService.updateSubscription(id, dto.tierType);
+    return this.subscriptionsService.updateSubscriptionWithOwnershipCheck(id, dto.tierType, req.user.id, req.user.role);
   }
 
   @Get('organizations/:id/subscription')

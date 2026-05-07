@@ -72,7 +72,7 @@ export class TeacherPayoutsService {
     return this.earningRepository.save(earning);
   }
 
-  async markAsPaid(teacherId: string, month: number, year: number): Promise<TeacherEarning> {
+  async markAsPaid(teacherId: string, month: number, year: number, performedBy: string): Promise<TeacherEarning> {
     const earning = await this.earningRepository.findOne({
       where: { teacherId, month, year },
     });
@@ -93,6 +93,7 @@ export class TeacherPayoutsService {
         earningId: earning.id,
         month,
         year,
+        performedBy,
       },
     });
     await this.transactionRepository.save(transaction);
@@ -106,6 +107,10 @@ export class TeacherPayoutsService {
     classId: string,
     amount: number,
   ): Promise<void> {
+    if (amount <= 0) {
+      throw new BadRequestException('Amount must be positive');
+    }
+
     const transaction = this.transactionRepository.create({
       teacherId,
       organizationId,
