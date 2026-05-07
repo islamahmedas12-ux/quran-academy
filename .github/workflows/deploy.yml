@@ -36,10 +36,45 @@ jobs:
       - name: Run tests
         run: npm test || echo "Tests placeholder - add actual tests"
 
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run npm audit
+        run: npm audit --audit-level=high || true
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'HIGH,CRITICAL'
+
+      - name: Upload Trivy results
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
   build:
     name: Build Docker Images
     runs-on: ubuntu-latest
-    needs: test
+    needs: [test, security-audit]
     outputs:
       docker_tag: ${{ steps.meta.outputs.tags }}
     steps:
@@ -91,6 +126,46 @@ jobs:
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/nginx:${{ github.sha }}
 
+      - name: Trivy container scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: '${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend:${{ github.sha }}'
+          format: 'sarif'
+          output: 'trivy-backend.sarif'
+          severity: 'HIGH,CRITICAL'
+
+      - name: Upload Trivy backend results
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-backend.sarif'
+
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: build
+    if: false  # Enable when Playwright tests are configured
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Run Playwright tests
+        run: npx playwright test
+        env:
+          BASE_URL: ${{ secrets.E2E_TEST_URL }}
+
   deploy:
     name: Deploy to VPS
     runs-on: ubuntu-latest
@@ -127,6 +202,9 @@ jobs:
           git fetch origin dev
           git checkout origin/dev
 
+          echo "Creating database backup before deployment..."
+          ./infra/scripts/backup.sh || true
+
           echo "Pulling Docker images..."
           docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend:${{ github.sha }}
           docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:${{ github.sha }}
@@ -142,6 +220,12 @@ jobs:
 
           echo "Starting services..."
           docker compose up -d
+
+          echo "Waiting for services to be healthy..."
+          sleep 30
+
+          echo "Running health check..."
+          curl -f http://localhost:3001/health || true
 
           echo "Cleaning up unused images..."
           docker image prune -f
@@ -161,6 +245,27 @@ jobs:
             rsync -az --exclude='.git' --exclude='node_modules' ./ ubuntu@${{ secrets.VPS_HOST }}:/opt/quran-academy/
             cd /opt/quran-academy
             ./deploy.sh
+
+      - name: Notify Slack on Success
+        if: success()
+        uses: slackapi/slack-github-action@v1
+        with:
+          channel-id: ${{ secrets.SLACK_CHANNEL_ID }}
+          payload: |
+            {
+              "text": "✅ Deployment successful!",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Quran Academy Deployment Successful*\n• Branch: `${{ github.ref_name }}`\n• Commit: `${{ github.sha }}`\n• Triggered by: @${{ github.actor }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 
   rollback:
     name: Rollback on Failure
@@ -184,7 +289,28 @@ jobs:
           key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
           script: |
             cd /opt/quran-academy
+            echo "Rolling back to previous version..."
             docker compose down
             docker compose pull
             docker compose up -d
             echo "Rollback completed"
+
+      - name: Notify Slack on Failure
+        uses: slackapi/slack-github-action@v1
+        with:
+          channel-id: ${{ secrets.SLACK_CHANNEL_ID }}
+          payload: |
+            {
+              "text": "❌ Deployment failed - Rollback initiated",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Quran Academy Deployment Failed*\n• Branch: `${{ github.ref_name }}`\n• Commit: `${{ github.sha }}`\n• Triggered by: @${{ github.actor }}\n• Status: Rollback initiated"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}

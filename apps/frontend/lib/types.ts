@@ -117,3 +117,50 @@ export interface Notification {
   isRead: boolean;
   createdAt: string;
 }
+
+export type CourseCategory = "quran" | "arabic" | "fiqh" | "seerah" | "hadith" | "tajweed" | "memorization";
+
+export interface CourseFilters {
+  category?: CourseCategory;
+  language?: string;
+  difficulty?: "beginner" | "intermediate" | "advanced";
+  search?: string;
+}
+
+export interface TeacherEarnings {
+  month: string;
+  classesCompleted: number;
+  gross: number;
+  fee: number;
+  net: number;
+}
+
+export interface AdminStats {
+  totalStudents: number;
+  totalTeachers: number;
+  totalCourses: number;
+  totalRevenue: number;
+}
+
+export interface EnrollmentTrend {
+  date: string;
+  count: number;
+}
+
+export interface RevenueByMonth {
+  month: string;
+  revenue: number;
+}
+
+export interface TopCourse {
+  courseId: string;
+  title: string;
+  enrollmentCount: number;
+}
+
+export interface RecentActivity {
+  id: string;
+  type: "enrollment" | "course_created" | "class_completed" | "user_registered";
+  description: string;
+  timestamp: string;
+}
