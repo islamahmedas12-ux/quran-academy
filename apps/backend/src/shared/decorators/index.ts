@@ -1,11 +1,15 @@
 import { createParamDecorator, ExecutionContext, SetMetadata } from '@nestjs/common';
 import { Role } from '../constants/enums';
+import { SubscriptionTierType } from '../../modules/payments/entities/subscription-tier.entity';
 
 export const IS_PUBLIC_KEY = 'isPublic';
 export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
 
 export const ROLES_KEY = 'roles';
 export const Roles = (...roles: Role[]) => SetMetadata(ROLES_KEY, roles);
+
+export const PLAN_GUARD_KEY = 'plan_guard';
+export const PlanGuard = (requiredTier: SubscriptionTierType) => SetMetadata(PLAN_GUARD_KEY, requiredTier);
 
 export const TenantHeader = createParamDecorator(
   (data: string, ctx: ExecutionContext) => {

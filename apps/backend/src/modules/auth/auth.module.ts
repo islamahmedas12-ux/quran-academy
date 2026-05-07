@@ -10,6 +10,8 @@ import { RefreshJwtStrategy } from '../../shared/strategies/refresh-jwt.strategy
 import { User } from '../users/entities/user.entity';
 import { MagicLinkToken } from './entities/magic-link-token.entity';
 import { RedisService } from '../../shared/services/redis.service';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { RolesGuard } from './guards/roles.guard';
 
 @Module({
   imports: [
@@ -25,7 +27,7 @@ import { RedisService } from '../../shared/services/redis.service';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, RefreshJwtStrategy, RedisService],
-  exports: [AuthService, JwtModule],
+  providers: [AuthService, JwtStrategy, RefreshJwtStrategy, RedisService, JwtAuthGuard, RolesGuard],
+  exports: [AuthService, JwtModule, JwtAuthGuard, RolesGuard],
 })
 export class AuthModule {}

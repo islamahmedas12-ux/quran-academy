@@ -6,7 +6,18 @@ import { LoggerMiddleware } from './shared/interceptors/logger.interceptor';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
+import { CoursesModule } from './modules/courses/courses.module';
+import { PaymentsModule } from './modules/payments/payments.module';
 import { HealthController } from './health.controller';
+import { SubscriptionTier } from './modules/payments/entities/subscription-tier.entity';
+import { OrganizationSubscription } from './modules/payments/entities/organization-subscription.entity';
+import { TeacherEarning } from './modules/payments/entities/teacher-earning.entity';
+import { PaymentTransaction } from './modules/payments/entities/payment-transaction.entity';
+import { Course } from './modules/courses/entities/course.entity';
+import { Lesson } from './modules/courses/entities/lesson.entity';
+import { Enrollment } from './modules/courses/entities/enrollment.entity';
+import { LessonProgress } from './modules/courses/entities/lesson-progress.entity';
+import { Certificate } from './modules/courses/entities/certificate.entity';
 
 @Module({
   imports: [
@@ -42,6 +53,8 @@ import { HealthController } from './health.controller';
     AuthModule,
     UsersModule,
     OrganizationsModule,
+    CoursesModule,
+    PaymentsModule,
   ],
   controllers: [HealthController],
 })

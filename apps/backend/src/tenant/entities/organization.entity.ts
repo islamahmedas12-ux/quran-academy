@@ -6,7 +6,7 @@ import {
   UpdateDateColumn,
   Index,
 } from 'typeorm';
-import { SubscriptionTier } from '../../../shared/constants/enums';
+import { SubscriptionTier } from '../../shared/constants/enums';
 
 @Entity('organizations')
 export class Organization {
