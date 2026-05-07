@@ -89,8 +89,6 @@ export class ClassesService {
       throw new BadRequestException('Booking time is outside teacher availability');
     }
 
-    const jitsiRoom = this.generateJitsiRoom(scheduledClass.organizationId, scheduledClass.id);
-
     const scheduledClass = this.classRepository.create({
       teacherId: dto.teacherId,
       studentId,
@@ -98,9 +96,12 @@ export class ClassesService {
       startTime,
       endTime,
       topic: dto.topic,
-      jitsiRoom,
+      jitsiRoom: '',
       status: ClassStatus.PENDING,
     });
+
+    const jitsiRoom = this.generateJitsiRoom(scheduledClass.organizationId, scheduledClass.id);
+    scheduledClass.jitsiRoom = jitsiRoom;
 
     return this.classRepository.save(scheduledClass);
   }

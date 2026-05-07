@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { IsPositive } from 'class-validator';
 import { TeacherEarning, TeacherEarningStatus } from '../entities/teacher-earning.entity';
 import { PaymentTransaction, TransactionType } from '../entities/payment-transaction.entity';
 

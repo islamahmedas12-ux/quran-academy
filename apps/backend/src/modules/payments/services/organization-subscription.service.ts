@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, Logger, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import Stripe from 'stripe';
 import { OrganizationSubscription, OrganizationSubscriptionStatus } from '../entities/organization-subscription.entity';
 import { SubscriptionTierType } from '../entities/subscription-tier.entity';
 import { StripeService } from './stripe.service';
@@ -205,7 +206,7 @@ export class OrganizationSubscriptionsService {
     }
   }
 
-  private async activateSubscription(session: any): Promise<void> {
+  private async activateSubscription(session: Stripe.Checkout.Session): Promise<void> {
     const organizationId = session.metadata?.organizationId;
     const tierType = session.metadata?.tierType;
 
@@ -214,10 +215,15 @@ export class OrganizationSubscriptionsService {
       return;
     }
 
+    if (!Object.values(SubscriptionTierType).includes(tierType as SubscriptionTierType)) {
+      this.logger.warn(`Invalid tierType in checkout session metadata: ${tierType}`);
+      return;
+    }
+
     let subscription = await this.getOrCreateSubscription(organizationId);
 
-    subscription.stripeCustomerId = session.customer;
-    subscription.stripeSubscriptionId = session.subscription;
+    subscription.stripeCustomerId = session.customer as string;
+    subscription.stripeSubscriptionId = session.subscription as string;
     subscription.tierType = tierType as SubscriptionTierType;
     subscription.status = OrganizationSubscriptionStatus.ACTIVE;
 
@@ -225,7 +231,7 @@ export class OrganizationSubscriptionsService {
     this.logger.log(`Activated subscription for organization ${organizationId}`);
   }
 
-  private async updateSubscriptionStatus(stripeSubscription: any): Promise<void> {
+  private async updateSubscriptionStatus(stripeSubscription: Stripe.Subscription): Promise<void> {
     const subscription = await this.subscriptionRepository.findOne({
       where: { stripeSubscriptionId: stripeSubscription.id },
     });
@@ -242,7 +248,7 @@ export class OrganizationSubscriptionsService {
     await this.subscriptionRepository.save(subscription);
   }
 
-  private async deactivateSubscription(stripeSubscription: any): Promise<void> {
+  private async deactivateSubscription(stripeSubscription: Stripe.Subscription): Promise<void> {
     const subscription = await this.subscriptionRepository.findOne({
       where: { stripeSubscriptionId: stripeSubscription.id },
     });
@@ -259,9 +265,9 @@ export class OrganizationSubscriptionsService {
     this.logger.log(`Deactivated subscription for organization ${subscription.organizationId}`);
   }
 
-  private async handlePaymentFailed(invoice: any): Promise<void> {
+  private async handlePaymentFailed(invoice: Stripe.Invoice): Promise<void> {
     const subscription = await this.subscriptionRepository.findOne({
-      where: { stripeCustomerId: invoice.customer },
+      where: { stripeCustomerId: invoice.customer as string },
     });
 
     if (!subscription) {

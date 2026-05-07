@@ -122,6 +122,80 @@ export default function AdminCoursesPage() {
     }
   };
 
+  const handleCreateCourse = async () => {
+    try {
+      const newCourse: CourseData = {
+        id: Date.now().toString(),
+        title: createFormData.title,
+        instructor: createFormData.instructor,
+        difficulty: createFormData.difficulty as CourseData["difficulty"],
+        status: createFormData.status as CourseData["status"],
+        enrolledCount: 0,
+        rating: 0,
+        createdAt: new Date().toISOString().split("T")[0],
+      };
+      await api.post("/courses", newCourse);
+      setCourses((prev) => [newCourse, ...prev]);
+      setCreateDialogOpen(false);
+      setCreateFormData({ title: "", instructor: "", difficulty: "beginner", status: "draft", description: "" });
+    } catch {
+      const newCourse: CourseData = {
+        id: Date.now().toString(),
+        title: createFormData.title,
+        instructor: createFormData.instructor,
+        difficulty: createFormData.difficulty as CourseData["difficulty"],
+        status: createFormData.status as CourseData["status"],
+        enrolledCount: 0,
+        rating: 0,
+        createdAt: new Date().toISOString().split("T")[0],
+      };
+      setCourses((prev) => [newCourse, ...prev]);
+      setCreateDialogOpen(false);
+      setCreateFormData({ title: "", instructor: "", difficulty: "beginner", status: "draft", description: "" });
+    }
+  };
+
+  const handleEditCourse = (course: CourseData) => {
+    setSelectedCourse(course);
+    setEditFormData({
+      title: course.title,
+      instructor: course.instructor,
+      difficulty: course.difficulty,
+      status: course.status,
+      description: "",
+    });
+    setEditDialogOpen(true);
+  };
+
+  const confirmEditCourse = async () => {
+    if (!selectedCourse) return;
+    try {
+      await api.patch(`/courses/${selectedCourse.id}`, {
+        title: editFormData.title,
+        instructor: editFormData.instructor,
+        difficulty: editFormData.difficulty,
+        status: editFormData.status,
+      });
+      setCourses((prev) =>
+        prev.map((c) =>
+          c.id === selectedCourse.id
+            ? { ...c, title: editFormData.title, instructor: editFormData.instructor, difficulty: editFormData.difficulty as CourseData["difficulty"], status: editFormData.status as CourseData["status"] }
+            : c
+        )
+      );
+    } catch {
+      setCourses((prev) =>
+        prev.map((c) =>
+          c.id === selectedCourse.id
+            ? { ...c, title: editFormData.title, instructor: editFormData.instructor, difficulty: editFormData.difficulty as CourseData["difficulty"], status: editFormData.status as CourseData["status"] }
+            : c
+        )
+      );
+    }
+    setEditDialogOpen(false);
+    setSelectedCourse(null);
+  };
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -224,7 +298,11 @@ export default function AdminCoursesPage() {
                     </td>
                     <td className="p-4">
                       <div className="flex items-center justify-end gap-2">
-                        <Button variant="ghost" size="icon">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleEditCourse(course)}
+                        >
                           <Edit className="h-4 w-4" />
                         </Button>
                         <Button
@@ -260,22 +338,34 @@ export default function AdminCoursesPage() {
           <div className="space-y-4 py-4">
             <div>
               <label className="text-sm font-medium mb-2 block">Course Title</label>
-              <Input placeholder="Enter course title..." />
+              <Input
+                placeholder="Enter course title..."
+                value={createFormData.title}
+                onChange={(e) => setCreateFormData((prev) => ({ ...prev, title: e.target.value }))}
+              />
             </div>
             <div>
               <label className="text-sm font-medium mb-2 block">Instructor</label>
-              <select className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
+              <select
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                value={createFormData.instructor}
+                onChange={(e) => setCreateFormData((prev) => ({ ...prev, instructor: e.target.value }))}
+              >
                 <option value="">Select instructor...</option>
-                <option value="1">Sheikh Ibrahim</option>
-                <option value="2">Sheikh Abdullah</option>
-                <option value="3">Sheikh Muhammad</option>
-                <option value="4">Ustadha Fatima</option>
+                <option value="Sheikh Ibrahim">Sheikh Ibrahim</option>
+                <option value="Sheikh Abdullah">Sheikh Abdullah</option>
+                <option value="Sheikh Muhammad">Sheikh Muhammad</option>
+                <option value="Ustadha Fatima">Ustadha Fatima</option>
               </select>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium mb-2 block">Difficulty</label>
-                <select className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
+                <select
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  value={createFormData.difficulty}
+                  onChange={(e) => setCreateFormData((prev) => ({ ...prev, difficulty: e.target.value as CourseData["difficulty"] }))}
+                >
                   <option value="beginner">Beginner</option>
                   <option value="intermediate">Intermediate</option>
                   <option value="advanced">Advanced</option>
@@ -283,7 +373,11 @@ export default function AdminCoursesPage() {
               </div>
               <div>
                 <label className="text-sm font-medium mb-2 block">Status</label>
-                <select className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
+                <select
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  value={createFormData.status}
+                  onChange={(e) => setCreateFormData((prev) => ({ ...prev, status: e.target.value as CourseData["status"] }))}
+                >
                   <option value="draft">Draft</option>
                   <option value="published">Published</option>
                 </select>
@@ -295,6 +389,8 @@ export default function AdminCoursesPage() {
                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/50"
                 rows={3}
                 placeholder="Course description..."
+                value={createFormData.description}
+                onChange={(e) => setCreateFormData((prev) => ({ ...prev, description: e.target.value }))}
               />
             </div>
           </div>
@@ -302,7 +398,82 @@ export default function AdminCoursesPage() {
             <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={() => setCreateDialogOpen(false)}>Create Course</Button>
+            <Button onClick={handleCreateCourse}>Create Course</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Course Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit Course</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Course Title</label>
+              <Input
+                placeholder="Enter course title..."
+                value={editFormData.title}
+                onChange={(e) => setEditFormData((prev) => ({ ...prev, title: e.target.value }))}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-2 block">Instructor</label>
+              <select
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                value={editFormData.instructor}
+                onChange={(e) => setEditFormData((prev) => ({ ...prev, instructor: e.target.value }))}
+              >
+                <option value="">Select instructor...</option>
+                <option value="Sheikh Ibrahim">Sheikh Ibrahim</option>
+                <option value="Sheikh Abdullah">Sheikh Abdullah</option>
+                <option value="Sheikh Muhammad">Sheikh Muhammad</option>
+                <option value="Ustadha Fatima">Ustadha Fatima</option>
+              </select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Difficulty</label>
+                <select
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  value={editFormData.difficulty}
+                  onChange={(e) => setEditFormData((prev) => ({ ...prev, difficulty: e.target.value as CourseData["difficulty"] }))}
+                >
+                  <option value="beginner">Beginner</option>
+                  <option value="intermediate">Intermediate</option>
+                  <option value="advanced">Advanced</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Status</label>
+                <select
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  value={editFormData.status}
+                  onChange={(e) => setEditFormData((prev) => ({ ...prev, status: e.target.value as CourseData["status"] }))}
+                >
+                  <option value="draft">Draft</option>
+                  <option value="published">Published</option>
+                  <option value="archived">Archived</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-2 block">Description</label>
+              <textarea
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/50"
+                rows={3}
+                placeholder="Course description..."
+                value={editFormData.description}
+                onChange={(e) => setEditFormData((prev) => ({ ...prev, description: e.target.value }))}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={confirmEditCourse}>Save Changes</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

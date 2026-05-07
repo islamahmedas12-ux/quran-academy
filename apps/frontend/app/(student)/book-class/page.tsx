@@ -233,11 +233,13 @@ export default function BookClassPage() {
                     <button
                       key={time}
                       onClick={() => handleTimeSelect(time)}
+                      disabled={isSelectingTime}
                       className={cn(
                         "p-3 rounded-xl border text-center font-medium transition-all duration-200 hover:shadow-md",
                         selectedTime === time
                           ? "bg-accent text-white border-accent shadow-md"
-                          : "border-slate-200 hover:border-accent/30 hover:bg-accent/5"
+                          : "border-slate-200 hover:border-accent/30 hover:bg-accent/5",
+                        isSelectingTime && "opacity-50 cursor-not-allowed"
                       )}
                     >
                       {time}
@@ -302,7 +304,7 @@ export default function BookClassPage() {
               </CardContent>
             </Card>
 
-            <Button onClick={handleConfirm} isLoading={isBooking} className="w-full h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-shadow">
+            <Button onClick={handleConfirm} isLoading={isBooking} disabled={!selectedTeacher || !selectedDate || !selectedTime} className="w-full h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-shadow">
               Confirm Booking
             </Button>
           </div>

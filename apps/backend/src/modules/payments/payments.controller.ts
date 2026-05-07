@@ -79,9 +79,10 @@ export class PaymentsController {
 @Post('webhooks/stripe')
   async handleStripeWebhook(
     @Headers('stripe-signature') signature: string,
-    @Body() body: Stripe.Event,
+    @Body() body: any,
   ) {
-    await this.subscriptionsService.handleWebhook(body);
+    const payload = Buffer.from(JSON.stringify(body));
+    const event = await this.subscriptionsService.verifyAndHandleWebhook(payload, signature);
     return { received: true };
   }
 

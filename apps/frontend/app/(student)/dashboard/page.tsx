@@ -236,6 +236,17 @@ export default function StudentDashboard() {
                     <Skeleton key={i} variant="card" className="h-24" />
                   ))}
                 </div>
+              ) : coursesError ? (
+                <div className="flex flex-col items-center justify-center py-6 gap-3">
+                  <div className="flex items-center gap-2 text-destructive">
+                    <AlertCircle className="h-5 w-5" />
+                    <span>{coursesError}</span>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={refetchCourses}>
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Retry
+                  </Button>
+                </div>
               ) : courses.length === 0 ? (
                 <EmptyState
                   icon={<BookOpen className="h-8 w-8" />}
@@ -364,8 +375,4 @@ export default function StudentDashboard() {
       </div>
     </div>
   );
-}
-
-function cn(...classes: (string | boolean | undefined)[]) {
-  return classes.filter(Boolean).join(" ");
 }
